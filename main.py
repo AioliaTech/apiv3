@@ -891,8 +891,10 @@ def get_data(request: Request):
     # Remove filtros vazios
     filters = {k: v for k, v in filters.items() if v}
     
-    # BUSCA POR ID ESPECÍFICO - tem prioridade sobre tudo
-    if id_param:
+    # Substitua a seção "BUSCA POR ID ESPECÍFICO" no seu main.py por este código:
+
+# BUSCA POR ID ESPECÍFICO - tem prioridade sobre tudo
+if id_param:
     vehicles_found = []
     
     # Se tem vírgula, trata como múltiplos IDs
