@@ -349,41 +349,43 @@ class VehicleSearchEngine:
         return [v.strip() for v in str(value).split(',') if v.strip()]
     
     def apply_filters(self, vehicles: List[Dict], filters: Dict[str, str]) -> List[Dict]:
-    if not filters:
-        return vehicles
+        """Aplica filtros aos veículos (CSV -> OR por valor)"""
+        if not filters:
+            return vehicles
 
-    filtered_vehicles = list(vehicles)
+        filtered_vehicles = list(vehicles)
 
-    for filter_key, filter_value in filters.items():
-        if not filter_value or not filtered_vehicles:
-            continue
+        for filter_key, filter_value in filters.items():
+            if not filter_value or not filtered_vehicles:
+                continue
 
-        if filter_key == "modelo":
-            def matches(v):
-                vt = v.get("tipo", "")
-                # Tenta em modelo, título e versão (OR entre campos)
-                for field in ["modelo", "titulo", "versao"]:
-                    fv = str(v.get(field, ""))
-                    if self._any_csv_value_matches(filter_value, fv, vt, self.model_match):
-                        return True
-                return False
-            filtered_vehicles = [v for v in filtered_vehicles if matches(v)]
+            if filter_key == "modelo":
+                def matches(v):
+                    vt = v.get("tipo", "")
+                    # tenta em modelo, título e versão (OR entre campos)
+                    for field in ["modelo", "titulo", "versao"]:
+                        fv = str(v.get(field, ""))
+                        if self._any_csv_value_matches(filter_value, fv, vt, self.model_match):
+                            return True
+                    return False
+                filtered_vehicles = [v for v in filtered_vehicles if matches(v)]
 
-        elif filter_key in ["cor", "categoria", "opcionais", "combustivel"]:
-            def matches(v):
-                vt = v.get("tipo", "")
-                fv = str(v.get(filter_key, ""))
-                return self._any_csv_value_matches(filter_value, fv, vt, self.fuzzy_match)
-            filtered_vehicles = [v for v in filtered_vehicles if matches(v)]
+            elif filter_key in ["cor", "categoria", "opcionais", "combustivel"]:
+                def matches(v):
+                    vt = v.get("tipo", "")
+                    fv = str(v.get(filter_key, ""))
+                    return self._any_csv_value_matches(filter_value, fv, vt, self.fuzzy_match)
+                filtered_vehicles = [v for v in filtered_vehicles if matches(v)]
 
-        elif filter_key in self.exact_fields:  # tipo, marca, cambio, motor, portas
-            normalized_vals = [self.normalize_text(v) for v in self.split_multi_value(filter_value)]
-            filtered_vehicles = [
-                v for v in filtered_vehicles
-                if self.normalize_text(str(v.get(filter_key, ""))) in normalized_vals
-            ]
+            elif filter_key in self.exact_fields:  # tipo, marca, cambio, motor, portas
+                normalized_vals = [self.normalize_text(v) for v in self.split_multi_value(filter_value)]
+                filtered_vehicles = [
+                    v for v in filtered_vehicles
+                    if self.normalize_text(str(v.get(filter_key, ""))) in normalized_vals
+                ]
 
-    return filtered_vehicles
+        return filtered_vehicles
+
     
     def apply_range_filters(self, vehicles: List[Dict], valormax: Optional[str], 
                           anomax: Optional[str], kmmax: Optional[str], ccmax: Optional[str]) -> List[Dict]:
