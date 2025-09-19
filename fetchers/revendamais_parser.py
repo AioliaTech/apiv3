@@ -41,8 +41,7 @@ class RevendamaisParser(BaseParser):
             parsed = self.normalize_vehicle({
                 "id": v.get("ID"), 
                 "tipo": tipo_final, 
-                "titulo": v.get("TITLE"), 
-                "versao": versao_veiculo,
+                "versao": v.get("TITLE"),
                 "marca": v.get("MAKE"), 
                 "modelo": modelo_veiculo, 
                 "ano": v.get("YEAR"),
