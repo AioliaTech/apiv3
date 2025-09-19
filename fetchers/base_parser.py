@@ -1,0 +1,242 @@
+"""
+Base parser class - Define a interface comum para todos os parsers de veículos
+"""
+
+from abc import ABC, abstractmethod
+from typing import Dict, List, Any
+from vehicle_mappings import (
+    MAPEAMENTO_CATEGORIAS, 
+    MAPEAMENTO_MOTOS, 
+    OPCIONAL_CHAVE_HATCH
+)
+import re
+from unidecode import unidecode
+
+class BaseParser(ABC):
+    """Classe base abstrata para todos os parsers de veículos"""
+    
+    @abstractmethod
+    def can_parse(self, data: Any, url: str) -> bool:
+        """Verifica se este parser pode processar os dados da URL fornecida"""
+        pass
+    
+    @abstractmethod
+    def parse(self, data: Any, url: str) -> List[Dict]:
+        """Processa os dados e retorna lista de veículos normalizados"""
+        pass
+    
+    def normalize_vehicle(self, vehicle: Dict) -> Dict:
+        """Normaliza um veículo para o formato padrão"""
+        # Aplica normalização nas fotos antes de retornar
+        fotos = vehicle.get("fotos", [])
+        vehicle["fotos"] = self.normalize_fotos(fotos)
+        
+        return {
+            "id": vehicle.get("id"), 
+            "tipo": vehicle.get("tipo"), 
+            "titulo": vehicle.get("titulo"),
+            "versao": vehicle.get("versao"), 
+            "marca": vehicle.get("marca"), 
+            "modelo": vehicle.get("modelo"),
+            "ano": vehicle.get("ano"), 
+            "ano_fabricacao": vehicle.get("ano_fabricacao"), 
+            "km": vehicle.get("km"),
+            "cor": vehicle.get("cor"), 
+            "combustivel": vehicle.get("combustivel"), 
+            "cambio": vehicle.get("cambio"),
+            "motor": vehicle.get("motor"), 
+            "portas": vehicle.get("portas"), 
+            "categoria": vehicle.get("categoria"),
+            "cilindrada": vehicle.get("cilindrada"), 
+            "preco": vehicle.get("preco", 0.0),
+            "opcionais": vehicle.get("opcionais", ""), 
+            "fotos": vehicle.get("fotos", [])
+        }
+    
+    def normalize_fotos(self, fotos_data: Any) -> List[str]:
+        """
+        Normaliza diferentes estruturas de fotos para uma lista simples de URLs.
+        
+        Entrada aceitas:
+        - Lista simples de URLs: ["url1", "url2"]  
+        - Lista aninhada: [["url1", "url2"], ["url3"]]
+        - Lista de objetos: [{"url": "url1"}, {"IMAGE_URL": "url2"}]
+        - Objeto único: {"url": "url1"}
+        - String única: "url1"
+        
+        Retorna sempre: ["url1", "url2", "url3"]
+        """
+        if not fotos_data:
+            return []
+        
+        result = []
+        
+        def extract_url_from_item(item):
+            """Extrai URL de um item que pode ser string, dict ou outro tipo"""
+            if isinstance(item, str):
+                return item.strip()
+            elif isinstance(item, dict):
+                # Tenta várias chaves possíveis para URL
+                for key in ["url", "URL", "src", "IMAGE_URL", "path", "link", "href"]:
+                    if key in item and item[key]:
+                        url = str(item[key]).strip()
+                        # Remove parâmetros de query se houver
+                        return url.split("?")[0] if "?" in url else url
+            return None
+        
+        def process_item(item):
+            """Processa um item que pode ser string, lista ou dict"""
+            if isinstance(item, str):
+                url = extract_url_from_item(item)
+                if url:
+                    result.append(url)
+            elif isinstance(item, list):
+                # Lista aninhada - processa cada subitem
+                for subitem in item:
+                    process_item(subitem)
+            elif isinstance(item, dict):
+                url = extract_url_from_item(item)
+                if url:
+                    result.append(url)
+        
+        # Processa a estrutura principal
+        if isinstance(fotos_data, list):
+            for item in fotos_data:
+                process_item(item)
+        else:
+            process_item(fotos_data)
+        
+        # Remove duplicatas e URLs vazias, mantém a ordem
+        seen = set()
+        normalized = []
+        for url in result:
+            if url and url not in seen:
+                seen.add(url)
+                normalized.append(url)
+        
+        return normalized
+    
+    def normalizar_texto(self, texto: str) -> str:
+        """Normaliza texto para comparação"""
+        if not texto: 
+            return ""
+        texto_norm = unidecode(str(texto)).lower()
+        texto_norm = re.sub(r'[^a-z0-9\s]', '', texto_norm)
+        texto_norm = re.sub(r'\s+', ' ', texto_norm).strip()
+        return texto_norm
+    
+    def definir_categoria_veiculo(self, modelo: str, opcionais: str = "") -> str:
+        """
+        Define a categoria de um veículo usando busca EXATA no mapeamento.
+        Para modelos ambíguos ("hatch,sedan"), usa os opcionais para decidir.
+        """
+        if not modelo: 
+            return None
+        
+        # Normaliza o modelo do feed para uma busca exata
+        modelo_norm = self.normalizar_texto(modelo)
+        
+        # Busca pela chave exata no mapeamento
+        categoria_result = MAPEAMENTO_CATEGORIAS.get(modelo_norm)
+        
+        # Se encontrou uma correspondência exata
+        if categoria_result:
+            if categoria_result == "hatch,sedan":
+                opcionais_norm = self.normalizar_texto(opcionais)
+                opcional_chave_norm = self.normalizar_texto(OPCIONAL_CHAVE_HATCH)
+                if opcional_chave_norm in opcionais_norm:
+                    return "Hatch"
+                else:
+                    return "Sedan"
+            else:
+                # Para todos os outros casos (SUV, Caminhonete, etc.)
+                return categoria_result
+                
+        # Se não encontrou correspondência exata, verifica os modelos ambíguos
+        # Isso é útil para casos como "Onix LTZ" corresponder a "onix"
+        for modelo_ambiguo, categoria_ambigua in MAPEAMENTO_CATEGORIAS.items():
+            if categoria_ambigua == "hatch,sedan":
+                if self.normalizar_texto(modelo_ambiguo) in modelo_norm:
+                    opcionais_norm = self.normalizar_texto(opcionais)
+                    opcional_chave_norm = self.normalizar_texto(OPCIONAL_CHAVE_HATCH)
+                    if opcional_chave_norm in opcionais_norm:
+                        return "Hatch"
+                    else:
+                        return "Sedan"
+        
+        # Busca parcial para categorias não ambíguas
+        for modelo_mapeado, categoria in MAPEAMENTO_CATEGORIAS.items():
+            if categoria != "hatch,sedan":  # Pula os ambíguos que já foram tratados acima
+                if self.normalizar_texto(modelo_mapeado) in modelo_norm:
+                    return categoria
+        
+        return None # Nenhuma correspondência encontrada
+    
+    def inferir_cilindrada_e_categoria_moto(self, modelo: str, versao: str = ""):
+        """
+        Infere cilindrada e categoria para motocicletas baseado no modelo e versão.
+        Busca primeiro no modelo, depois na versão se não encontrar.
+        Retorna uma tupla (cilindrada, categoria).
+        """
+        def buscar_no_texto(texto: str):
+            if not texto: 
+                return None, None
+            
+            texto_norm = self.normalizar_texto(texto)
+            
+            # Busca exata primeiro
+            if texto_norm in MAPEAMENTO_MOTOS:
+                cilindrada, categoria = MAPEAMENTO_MOTOS[texto_norm]
+                return cilindrada, categoria
+            
+            # Busca por correspondência parcial - ordena por comprimento (mais específico primeiro)
+            matches = []
+            for modelo_mapeado, (cilindrada, categoria) in MAPEAMENTO_MOTOS.items():
+                modelo_mapeado_norm = self.normalizar_texto(modelo_mapeado)
+                
+                # Verifica se o modelo mapeado está contido no texto
+                if modelo_mapeado_norm in texto_norm:
+                    matches.append((modelo_mapeado_norm, cilindrada, categoria, len(modelo_mapeado_norm)))
+                
+                # Verifica também variações sem espaço (ybr150 vs ybr 150)
+                modelo_sem_espaco = modelo_mapeado_norm.replace(' ', '')
+                if modelo_sem_espaco in texto_norm:
+                    matches.append((modelo_sem_espaco, cilindrada, categoria, len(modelo_sem_espaco)))
+            
+            # Se encontrou correspondências, retorna a mais específica (maior comprimento)
+            if matches:
+                # Ordena por comprimento decrescente para pegar a correspondência mais específica
+                matches.sort(key=lambda x: x[3], reverse=True)
+                _, cilindrada, categoria, _ = matches[0]
+                return cilindrada, categoria
+            
+            return None, None
+        
+        # Busca primeiro no modelo
+        cilindrada, categoria = buscar_no_texto(modelo)
+        
+        # Se não encontrou e tem versão, busca na versão
+        if not cilindrada and versao:
+            cilindrada, categoria = buscar_no_texto(versao)
+        
+        # TERCEIRA TENTATIVA: modelo + versao como frase completa
+        if not cilindrada and versao:
+            cilindrada, categoria = buscar_no_texto(f"{modelo} {versao}")
+        
+        return cilindrada, categoria
+    
+    def converter_preco(self, valor: Any) -> float:
+        """Converte string de preço para float"""
+        if not valor: 
+            return 0.0
+        try:
+            if isinstance(valor, (int, float)): 
+                return float(valor)
+            valor_str = str(valor)
+            valor_str = re.sub(r'[^\d,.]', '', valor_str).replace(',', '.')
+            parts = valor_str.split('.')
+            if len(parts) > 2: 
+                valor_str = ''.join(parts[:-1]) + '.' + parts[-1]
+            return float(valor_str) if valor_str else 0.0
+        except (ValueError, TypeError): 
+            return 0.0
