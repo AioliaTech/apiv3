@@ -703,6 +703,126 @@ def schedule_tasks():
     scheduler.start()
     wrapped_fetch_and_convert_xml()  # Executa uma vez na inicialização
 
+@app.get("/list")
+def list_vehicles():
+    """Endpoint que lista todos os veículos organizados por categoria"""
+    
+    # Verifica se o arquivo de dados existe
+    if not os.path.exists("data.json"):
+        return JSONResponse(
+            content={"error": "Nenhum dado disponível"},
+            status_code=404
+        )
+    
+    # Carrega os dados
+    try:
+        with open("data.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        vehicles = data.get("veiculos", [])
+        if not isinstance(vehicles, list):
+            raise ValueError("Formato inválido: 'veiculos' deve ser uma lista")
+            
+    except (json.JSONDecodeError, ValueError, KeyError) as e:
+        return JSONResponse(
+            content={"error": f"Erro ao carregar dados: {str(e)}"},
+            status_code=500
+        )
+    
+    # Organiza veículos por categoria
+    categorized_vehicles = {}
+    nao_mapeados = []
+    
+    for vehicle in vehicles:
+        categoria = vehicle.get("categoria")
+        tipo = vehicle.get("tipo", "").lower()
+        
+        # Se não tem categoria, vai para "não mapeados"
+        if not categoria or categoria in ["", "None", None]:
+            nao_mapeados.append(_format_vehicle(vehicle))
+            continue
+        
+        # Cria a categoria se não existe
+        if categoria not in categorized_vehicles:
+            categorized_vehicles[categoria] = []
+        
+        # Formata o veículo baseado no tipo
+        formatted_vehicle = _format_vehicle(vehicle)
+        categorized_vehicles[categoria].append(formatted_vehicle)
+    
+    # Monta resposta final ordenando por categoria
+    result = {}
+    
+    # Adiciona categorias ordenadas alfabeticamente
+    for categoria in sorted(categorized_vehicles.keys()):
+        result[categoria] = categorized_vehicles[categoria]
+    
+    # Adiciona não mapeados no final se houver
+    if nao_mapeados:
+        result["NÃO MAPEADOS"] = nao_mapeados
+    
+    # Estatísticas resumidas
+    stats = {
+        "total_veiculos": len(vehicles),
+        "total_categorias": len(categorized_vehicles),
+        "nao_mapeados_count": len(nao_mapeados),
+        "categorias_com_contagem": {
+            categoria: len(veiculos) 
+            for categoria, veiculos in categorized_vehicles.items()
+        }
+    }
+    
+    return JSONResponse(content={
+        "veiculos_por_categoria": result,
+        "estatisticas": stats
+    })
+
+def _format_vehicle(vehicle: Dict) -> str:
+    """Formata um veículo conforme especificado"""
+    tipo = vehicle.get("tipo", "").lower()
+    
+    # Função auxiliar para tratar valores None/vazios
+    def safe_value(value):
+        if value is None or value == "":
+            return ""
+        return str(value)
+    
+    # Se for moto: id,tipo,marca,modelo,versao,cor,ano,km,combustivel,cambio,cilindrada,portas,preco
+    if "moto" in tipo:
+        return ",".join([
+            safe_value(vehicle.get("id")),
+            safe_value(vehicle.get("tipo")),
+            safe_value(vehicle.get("marca")),
+            safe_value(vehicle.get("modelo")),
+            safe_value(vehicle.get("versao")),
+            safe_value(vehicle.get("cor")),
+            safe_value(vehicle.get("ano")),
+            safe_value(vehicle.get("km")),
+            safe_value(vehicle.get("combustivel")),
+            safe_value(vehicle.get("cambio")),
+            safe_value(vehicle.get("cilindrada")),
+            safe_value(vehicle.get("portas")),
+            safe_value(vehicle.get("preco"))
+        ])
+    
+    # Se for carro: id,tipo,marca,modelo,versao,cor,ano,km,combustivel,cambio,motor,portas,preco
+    else:
+        return ",".join([
+            safe_value(vehicle.get("id")),
+            safe_value(vehicle.get("tipo")),
+            safe_value(vehicle.get("marca")),
+            safe_value(vehicle.get("modelo")),
+            safe_value(vehicle.get("versao")),
+            safe_value(vehicle.get("cor")),
+            safe_value(vehicle.get("ano")),
+            safe_value(vehicle.get("km")),
+            safe_value(vehicle.get("combustivel")),
+            safe_value(vehicle.get("cambio")),
+            safe_value(vehicle.get("motor")),
+            safe_value(vehicle.get("portas")),
+            safe_value(vehicle.get("preco"))
+        ])
+
 @app.get("/api/data")
 def get_data(request: Request):
     """Endpoint principal para busca de veículos"""
