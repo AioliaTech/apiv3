@@ -22,72 +22,21 @@ from fetchers import (
 
 JSON_FILE = "data.json"
 
-# =================== PARSERS ADICIONAIS (que não foram migrados ainda) =======================
-
-# Aqui você pode adicionar parsers que ainda não foram migrados para a pasta fetchers
-# Mantenha temporariamente até migrar todos
-
-class AutoconfParser:
-    """Parser temporário até migrar"""
-    def can_parse(self, data: Any, url: str) -> bool:
-        return "autoconf" in url.lower()
-    
-    def parse(self, data: Any, url: str) -> List[Dict]:
-        # Implementação simplificada - substitua pela implementação completa
-        return []
-
-class RevendamaisParser:
-    """Parser temporário até migrar"""
-    def can_parse(self, data: Any, url: str) -> bool:
-        return "revendamais.com.br" in url.lower()
-    
-    def parse(self, data: Any, url: str) -> List[Dict]:
-        # Implementação simplificada - substitua pela implementação completa
-        return []
-
-class FronteiraParser:
-    """Parser temporário até migrar"""
-    def can_parse(self, data: Any, url: str) -> bool:
-        return "fronteiraveiculos.com" in url.lower()
-    
-    def parse(self, data: Any, url: str) -> List[Dict]:
-        # Implementação simplificada - substitua pela implementação completa
-        return []
-
-class RevendaproParser:
-    """Parser temporário até migrar"""
-    def can_parse(self, data: Any, url: str) -> bool:
-        return "revendapro.com.br" in url.lower()
-    
-    def parse(self, data: Any, url: str) -> List[Dict]:
-        # Implementação simplificada - substitua pela implementação completa
-        return []
-
-class SimplesVeiculoParser:
-    """Parser temporário até migrar"""
-    def can_parse(self, data: Any, url: str) -> bool:
-        return "simplesveiculo.com.br" in url.lower()
-    
-    def parse(self, data: Any, url: str) -> List[Dict]:
-        # Implementação simplificada - substitua pela implementação completa
-        return []
-
 # =================== SISTEMA PRINCIPAL =======================
 
 class UnifiedVehicleFetcher:
     def __init__(self):
-        # Inicializa os parsers usando as classes da pasta fetchers
+        # Inicializa TODOS os parsers usando as classes da pasta fetchers
         self.parsers = [
             AltimusParser(),
-            AutocertoParser(),
-            ClickGarageParser(), 
-            BoomParser(),  # BoomParser como fallback
-            # Parsers temporários até migrar completamente
-            AutoconfParser(),
-            RevendamaisParser(),
             FronteiraParser(),
+            ClickGarageParser(), 
+            AutocertoParser(), 
+            RevendamaisParser(), 
+            AutoconfParser(), 
+            SimplesVeiculoParser(),
             RevendaproParser(),
-            SimplesVeiculoParser()
+            BoomParser()  # BoomParser como fallback
         ]
         print("[INFO] Sistema unificado iniciado com parsers modularizados")
     
@@ -107,9 +56,7 @@ class UnifiedVehicleFetcher:
                 raise ValueError(f"Formato não reconhecido para URL: {url}")
     
     def select_parser(self, data: Any, url: str) -> Optional[object]:
-        """
-        Seleciona o parser apropriado baseado na URL
-        """
+        """Seleciona o parser apropriado baseado na URL"""
         # Primeira prioridade: seleção baseada na URL
         for parser in self.parsers:
             if parser.can_parse(data, url):
@@ -285,3 +232,21 @@ if __name__ == "__main__":
                 cilindrada = v.get('cilindrada', '')
                 cilindrada_str = f" - {cilindrada}cc" if cilindrada else ""
                 print(f"{i}. {v.get('marca', 'N/A')} {v.get('modelo', 'N/A')} ({tipo}/{categoria}{cilindrada_str}) {v.get('ano', 'N/A')} - R$ {v.get('preco', 0.0):,.2f}")
+            
+            # Exemplos específicos de motos categorizadas
+            motos = [v for v in result['veiculos'] if v.get('tipo') and 'moto' in str(v.get('tipo')).lower()]
+            if motos:
+                print(f"\nExemplos de motos categorizadas:")
+                for i, moto in enumerate(motos[:3], 1):
+                    print(f"{i}. {moto.get('marca', 'N/A')} {moto.get('modelo', 'N/A')} - {moto.get('categoria', 'N/A')} - {moto.get('cilindrada', 'N/A')}cc")
+            
+            # Demonstração da normalização de fotos
+            print(f"\nExemplos de fotos normalizadas:")
+            vehicles_with_photos = [v for v in result['veiculos'] if v.get('fotos')][:3]
+            for i, vehicle in enumerate(vehicles_with_photos, 1):
+                fotos = vehicle.get('fotos', [])
+                print(f"{i}. {vehicle.get('marca', 'N/A')} {vehicle.get('modelo', 'N/A')} - {len(fotos)} foto(s)")
+                if fotos:
+                    print(f"   Primeira foto: {fotos[0]}")
+                    if len(fotos) > 1:
+                        print(f"   Tipo da estrutura: Lista simples com {len(fotos)} URLs")
