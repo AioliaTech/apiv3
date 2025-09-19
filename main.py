@@ -761,21 +761,53 @@ def list_vehicles():
     if nao_mapeados:
         result["NÃO MAPEADOS"] = nao_mapeados
     
-    # Estatísticas resumidas
-    stats = {
-        "total_veiculos": len(vehicles),
-        "total_categorias": len(categorized_vehicles),
-        "nao_mapeados_count": len(nao_mapeados),
-        "categorias_com_contagem": {
-            categoria: len(veiculos) 
-            for categoria, veiculos in categorized_vehicles.items()
-        }
-    }
+    return JSONResponse(content=result)
+
+def _format_vehicle(vehicle: Dict) -> str:
+    """Formata um veículo conforme especificado"""
+    tipo = vehicle.get("tipo", "").lower()
     
-    return JSONResponse(content={
-        "veiculos_por_categoria": result,
-        "estatisticas": stats
-    })
+    # Função auxiliar para tratar valores None/vazios
+    def safe_value(value):
+        if value is None or value == "":
+            return ""
+        return str(value)
+    
+    # Se for moto: id,tipo,marca,modelo,versao,cor,ano,km,combustivel,cambio,cilindrada,portas,preco
+    if "moto" in tipo:
+        return ",".join([
+            safe_value(vehicle.get("id")),
+            safe_value(vehicle.get("tipo")),
+            safe_value(vehicle.get("marca")),
+            safe_value(vehicle.get("modelo")),
+            safe_value(vehicle.get("versao")),
+            safe_value(vehicle.get("cor")),
+            safe_value(vehicle.get("ano")),
+            safe_value(vehicle.get("km")),
+            safe_value(vehicle.get("combustivel")),
+            safe_value(vehicle.get("cambio")),
+            safe_value(vehicle.get("cilindrada")),
+            safe_value(vehicle.get("portas")),
+            safe_value(vehicle.get("preco"))
+        ])
+    
+    # Se for carro: id,tipo,marca,modelo,versao,cor,ano,km,combustivel,cambio,motor,portas,preco
+    else:
+        return ",".join([
+            safe_value(vehicle.get("id")),
+            safe_value(vehicle.get("tipo")),
+            safe_value(vehicle.get("marca")),
+            safe_value(vehicle.get("modelo")),
+            safe_value(vehicle.get("versao")),
+            safe_value(vehicle.get("cor")),
+            safe_value(vehicle.get("ano")),
+            safe_value(vehicle.get("km")),
+            safe_value(vehicle.get("combustivel")),
+            safe_value(vehicle.get("cambio")),
+            safe_value(vehicle.get("motor")),
+            safe_value(vehicle.get("portas")),
+            safe_value(vehicle.get("preco"))
+        ])
 
 def _format_vehicle(vehicle: Dict) -> str:
     """Formata um veículo conforme especificado"""
