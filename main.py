@@ -703,6 +703,129 @@ def schedule_tasks():
     scheduler.start()
     wrapped_fetch_and_convert_xml()  # Executa uma vez na inicialização
 
+@app.get("/list")
+def list_vehicles(request: Request):
+    """Endpoint que lista todos os veículos organizados por categoria"""
+    
+    # Verifica se o arquivo de dados existe
+    if not os.path.exists("data.json"):
+        return JSONResponse(
+            content={"error": "Nenhum dado disponível"},
+            status_code=404
+        )
+    
+    # Carrega os dados
+    try:
+        with open("data.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        vehicles = data.get("veiculos", [])
+        if not isinstance(vehicles, list):
+            raise ValueError("Formato inválido: 'veiculos' deve ser uma lista")
+            
+    except (json.JSONDecodeError, ValueError, KeyError) as e:
+        return JSONResponse(
+            content={"error": f"Erro ao carregar dados: {str(e)}"},
+            status_code=500
+        )
+    
+    # Extrai parâmetros de filtro da query
+    query_params = dict(request.query_params)
+    filter_categoria = query_params.get("categoria")
+    filter_tipo = query_params.get("tipo")
+    
+    # Aplica filtros se especificados
+    filtered_vehicles = vehicles
+    
+    if filter_categoria:
+        filtered_vehicles = [
+            v for v in filtered_vehicles 
+            if v.get("categoria") and filter_categoria.lower() in v.get("categoria", "").lower()
+        ]
+    
+    if filter_tipo:
+        filtered_vehicles = [
+            v for v in filtered_vehicles 
+            if v.get("tipo") and filter_tipo.lower() in v.get("tipo", "").lower()
+        ]
+    
+    # Organiza veículos por categoria
+    categorized_vehicles = {}
+    nao_mapeados = []
+    
+    for vehicle in filtered_vehicles:
+        categoria = vehicle.get("categoria")
+        
+        # Se não tem categoria, vai para "não mapeados"
+        if not categoria or categoria in ["", "None", None]:
+            nao_mapeados.append(_format_vehicle(vehicle))
+            continue
+        
+        # Cria a categoria se não existe
+        if categoria not in categorized_vehicles:
+            categorized_vehicles[categoria] = []
+        
+        # Formata o veículo baseado no tipo
+        formatted_vehicle = _format_vehicle(vehicle)
+        categorized_vehicles[categoria].append(formatted_vehicle)
+    
+    # Monta resposta final ordenando por categoria
+    result = {}
+    
+    # Adiciona categorias ordenadas alfabeticamente
+    for categoria in sorted(categorized_vehicles.keys()):
+        result[categoria] = categorized_vehicles[categoria]
+    
+    # Adiciona não mapeados no final se houver
+    if nao_mapeados:
+        result["NÃO MAPEADOS"] = nao_mapeados
+    
+    return JSONResponse(content=result)
+
+def _format_vehicle(vehicle: Dict) -> str:
+    """Formata um veículo conforme especificado"""
+    tipo = vehicle.get("tipo", "").lower()
+    
+    # Função auxiliar para tratar valores None/vazios
+    def safe_value(value):
+        if value is None or value == "":
+            return ""
+        return str(value)
+    
+    # Se for moto: id,tipo,marca,modelo,versao,cor,ano,km,combustivel,cambio,cilindrada,portas,preco
+    if "moto" in tipo:
+        return ",".join([
+            safe_value(vehicle.get("id")),
+            safe_value(vehicle.get("tipo")),
+            safe_value(vehicle.get("marca")),
+            safe_value(vehicle.get("modelo")),
+            safe_value(vehicle.get("versao")),
+            safe_value(vehicle.get("cor")),
+            safe_value(vehicle.get("ano")),
+            safe_value(vehicle.get("km")),
+            safe_value(vehicle.get("combustivel")),
+            safe_value(vehicle.get("cilindrada")),
+            safe_value(vehicle.get("preco"))
+        ])
+    
+    # Se for carro: id,tipo,marca,modelo,versao,cor,ano,km,combustivel,cambio,motor,portas,preco
+    else:
+        return ",".join([
+            safe_value(vehicle.get("id")),
+            safe_value(vehicle.get("tipo")),
+            safe_value(vehicle.get("marca")),
+            safe_value(vehicle.get("modelo")),
+            safe_value(vehicle.get("versao")),
+            safe_value(vehicle.get("cor")),
+            safe_value(vehicle.get("ano")),
+            safe_value(vehicle.get("km")),
+            safe_value(vehicle.get("combustivel")),
+            safe_value(vehicle.get("cambio")),
+            safe_value(vehicle.get("motor")),
+            safe_value(vehicle.get("portas")),
+            safe_value(vehicle.get("preco"))
+        ])
+
 @app.get("/api/data")
 def get_data(request: Request):
     """Endpoint principal para busca de veículos"""
@@ -715,3 +838,228 @@ def get_data(request: Request):
                 "resultados": [],
                 "total_encontrado": 0
             },
+            status_code=404
+        )
+    
+    # Carrega os dados
+    try:
+        with open("data.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        vehicles = data.get("veiculos", [])
+        if not isinstance(vehicles, list):
+            raise ValueError("Formato inválido: 'veiculos' deve ser uma lista")
+            
+    except (json.JSONDecodeError, ValueError, KeyError) as e:
+        return JSONResponse(
+            content={
+                "error": f"Erro ao carregar dados: {str(e)}",
+                "resultados": [],
+                "total_encontrado": 0
+            },
+            status_code=500
+        )
+    
+    # Extrai parâmetros da query
+    query_params = dict(request.query_params)
+    
+    # Parâmetros especiais - aplica "pegar maior valor" para campos de range
+    valormax = search_engine.get_max_value_from_range_param(query_params.pop("ValorMax", None))
+    anomax = search_engine.get_max_value_from_range_param(query_params.pop("AnoMax", None))
+    kmmax = search_engine.get_max_value_from_range_param(query_params.pop("KmMax", None))
+    ccmax = search_engine.get_max_value_from_range_param(query_params.pop("CcMax", None))
+    simples = query_params.pop("simples", None)
+    excluir = query_params.pop("excluir", None)
+    
+    # Parâmetro especial para busca por ID
+    id_param = query_params.pop("id", None)
+    
+    # Filtros principais
+    filters = {
+        "tipo": query_params.get("tipo"),
+        "modelo": query_params.get("modelo"),
+        "categoria": query_params.get("categoria"),
+        "cambio": query_params.get("cambio"),
+        "opcionais": query_params.get("opcionais"),
+        "marca": query_params.get("marca"),
+        "cor": query_params.get("cor"),
+        "combustivel": query_params.get("combustivel"),
+        "motor": query_params.get("motor"),
+        "portas": query_params.get("portas")
+    }
+    
+    # Remove filtros vazios
+    filters = {k: v for k, v in filters.items() if v}
+    
+    # BUSCA POR ID ESPECÍFICO - tem prioridade sobre tudo
+    if id_param:
+        vehicle_found = None
+        for vehicle in vehicles:
+            if str(vehicle.get("id")) == str(id_param):
+                vehicle_found = vehicle
+                break
+        
+        if vehicle_found:
+            # Aplica modo simples se solicitado - CORRIGIDO
+            if simples == "1":
+                fotos = vehicle_found.get("fotos")
+                if isinstance(fotos, list) and len(fotos) > 0:
+                    # Estrutura simples ["foto1", "foto2", ...] - seu caso
+                    if isinstance(fotos[0], str):
+                        vehicle_found["fotos"] = [fotos[0]]  # Mantém só a primeira foto
+                    # Estrutura aninhada [["foto1", "foto2", ...]]
+                    elif isinstance(fotos[0], list) and len(fotos[0]) > 0:
+                        vehicle_found["fotos"] = [[fotos[0][0]]]  # Mantém estrutura aninhada
+                    else:
+                        vehicle_found["fotos"] = []
+                else:
+                    vehicle_found["fotos"] = []
+            
+            # Remove opcionais se não foi pesquisado por opcionais OU por ID
+            if "opcionais" not in filters and not id_param and "opcionais" in vehicle_found:
+                del vehicle_found["opcionais"]
+            
+            return JSONResponse(content={
+                "resultados": [vehicle_found],
+                "total_encontrado": 1,
+                "info": f"Veículo encontrado por ID: {id_param}"
+            })
+        else:
+            return JSONResponse(content={
+                "resultados": [],
+                "total_encontrado": 0,
+                "error": f"Veículo com ID {id_param} não encontrado"
+            })
+    
+    # Verifica se há filtros de busca reais (exclui parâmetros especiais)
+    has_search_filters = bool(filters) or valormax or anomax or kmmax or ccmax
+    
+    # Processa IDs a excluir
+    excluded_ids = set()
+    if excluir:
+        excluded_ids = set(e.strip() for e in excluir.split(",") if e.strip())
+    
+    # Se não há filtros de busca, retorna todo o estoque
+    if not has_search_filters:
+        all_vehicles = list(vehicles)
+        
+        # Remove IDs excluídos se especificado
+        if excluded_ids:
+            all_vehicles = [
+                v for v in all_vehicles
+                if str(v.get("id")) not in excluded_ids
+            ]
+        
+        # Ordena por preço decrescente (padrão)
+        sorted_vehicles = sorted(all_vehicles, key=lambda v: search_engine.convert_price(v.get("preco")) or 0, reverse=True)
+        
+        # Aplica modo simples se solicitado - CORRIGIDO
+        if simples == "1":
+            for vehicle in sorted_vehicles:
+                fotos = vehicle.get("fotos")
+                if isinstance(fotos, list) and len(fotos) > 0:
+                    # Estrutura simples ["foto1", "foto2", ...] - seu caso
+                    if isinstance(fotos[0], str):
+                        vehicle["fotos"] = [fotos[0]]  # Mantém só a primeira foto
+                    # Estrutura aninhada [["foto1", "foto2", ...]]
+                    elif isinstance(fotos[0], list) and len(fotos[0]) > 0:
+                        vehicle["fotos"] = [[fotos[0][0]]]  # Mantém estrutura aninhada
+                    else:
+                        vehicle["fotos"] = []
+                else:
+                    vehicle["fotos"] = []
+        
+        # Remove opcionais se não foi pesquisado por opcionais OU por ID
+        if "opcionais" not in filters and not id_param:
+            for vehicle in sorted_vehicles:
+                if "opcionais" in vehicle:
+                    del vehicle["opcionais"]
+        
+        return JSONResponse(content={
+            "resultados": sorted_vehicles,
+            "total_encontrado": len(sorted_vehicles),
+            "info": "Exibindo todo o estoque disponível"
+        })
+    
+    # Executa a busca com fallback
+    result = search_engine.search_with_fallback(
+        vehicles, filters, valormax, anomax, kmmax, ccmax, excluded_ids
+    )
+    
+    # Aplica modo simples se solicitado - CORRIGIDO
+    if simples == "1" and result.vehicles:
+        for vehicle in result.vehicles:
+            fotos = vehicle.get("fotos")
+            if isinstance(fotos, list) and len(fotos) > 0:
+                # Estrutura simples ["foto1", "foto2", ...] - seu caso
+                if isinstance(fotos[0], str):
+                    vehicle["fotos"] = [fotos[0]]  # Mantém só a primeira foto
+                # Estrutura aninhada [["foto1", "foto2", ...]]
+                elif isinstance(fotos[0], list) and len(fotos[0]) > 0:
+                    vehicle["fotos"] = [[fotos[0][0]]]  # Mantém estrutura aninhada
+                else:
+                    vehicle["fotos"] = []
+            else:
+                vehicle["fotos"] = []
+    
+    # Remove opcionais se não foi pesquisado por opcionais OU por ID
+    if "opcionais" not in filters and not id_param and result.vehicles:
+        for vehicle in result.vehicles:
+            if "opcionais" in vehicle:
+                del vehicle["opcionais"]
+    
+    # Monta resposta
+    response_data = {
+        "resultados": result.vehicles,
+        "total_encontrado": result.total_found
+    }
+    
+    # Adiciona informações de fallback apenas se houver filtros removidos
+    if result.fallback_info:
+        response_data.update(result.fallback_info)
+    
+    # Mensagem especial se não encontrou nada
+    if result.total_found == 0:
+        response_data["instrucao_ia"] = (
+            "Não encontramos veículos com os parâmetros informados "
+            "e também não encontramos opções próximas."
+        )
+    
+    return JSONResponse(content=response_data)
+
+@app.get("/api/health")
+def health_check():
+    """Endpoint de verificação de saúde"""
+    return {"status": "healthy", "timestamp": "2025-07-13"}
+
+@app.get("/api/status")
+def get_status():
+    """Endpoint para verificar status da última atualização dos dados"""
+    status = get_update_status()
+    
+    # Informações adicionais sobre os arquivos
+    data_file_exists = os.path.exists("data.json")
+    data_file_size = 0
+    data_file_modified = None
+    
+    if data_file_exists:
+        try:
+            stat = os.stat("data.json")
+            data_file_size = stat.st_size
+            data_file_modified = datetime.fromtimestamp(stat.st_mtime).isoformat()
+        except:
+            pass
+    
+    return {
+        "last_update": status,
+        "data_file": {
+            "exists": data_file_exists,
+            "size_bytes": data_file_size,
+            "modified_at": data_file_modified
+        },
+        "current_time": datetime.now().isoformat()
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
