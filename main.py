@@ -804,9 +804,7 @@ def _format_vehicle(vehicle: Dict) -> str:
             safe_value(vehicle.get("ano")),
             safe_value(vehicle.get("km")),
             safe_value(vehicle.get("combustivel")),
-            safe_value(vehicle.get("cambio")),
             safe_value(vehicle.get("cilindrada")),
-            safe_value(vehicle.get("portas")),
             safe_value(vehicle.get("preco"))
         ])
     
