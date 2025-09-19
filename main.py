@@ -46,18 +46,18 @@ class VehicleSearchEngine:
         self.exact_fields = ["tipo", "marca", "cambio", "motor", "portas"]
 
     def _any_csv_value_matches(self, raw_val: str, field_val: str, vehicle_type: str, word_matcher):
-    """
-    Faz OR entre valores CSV (ex.: "MT,XJ6" → ["MT","XJ6"]).
-    word_matcher: função (words:list[str], field_val:str, vehicle_type:str) -> (bool, reason)
-    """
-    if not raw_val:
+        """
+        Faz OR entre valores CSV (ex.: "MT,XJ6" → ["MT","XJ6"]).
+        word_matcher: função (words:list[str], field_val:str, vehicle_type:str) -> (bool, reason)
+        """
+        if not raw_val:
+            return False
+        for val in self.split_multi_value(raw_val):  # "preto,prata escuro" -> ["preto","prata escuro"]
+            words = val.split()                      # "prata escuro" -> ["prata","escuro"]
+            ok, _ = word_matcher(words, field_val, vehicle_type)
+            if ok:
+                return True
         return False
-    for val in self.split_multi_value(raw_val):  # "preto,prata escuro" -> ["preto","prata escuro"]
-        words = val.split()                      # "prata escuro" -> ["prata","escuro"]
-        ok, _ = word_matcher(words, field_val, vehicle_type)
-        if ok:
-            return True
-    return False
         
     def normalize_text(self, text: str) -> str:
         """Normaliza texto para comparação"""
