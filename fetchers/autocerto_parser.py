@@ -41,7 +41,7 @@ class AutocertoParser(BaseParser):
                 "id": v.get("idveiculo"),
                 "tipo": "moto" if is_moto else v.get("tipoveiculo"),
                 "titulo": None,
-                "versao": self._clean_version(v.get('modelo'), v.get('versao')),
+                "versao": v.get('versao')),
                 "marca": v.get("marca"),
                 "modelo": modelo_veiculo,
                 "ano": v.get("anomodelo"),
