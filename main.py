@@ -893,69 +893,27 @@ def get_data(request: Request):
     
     # BUSCA POR ID ESPECÍFICO - tem prioridade sobre tudo
     if id_param:
-        vehicle_found = None
+    vehicles_found = []
+    
+    # Se tem vírgula, trata como múltiplos IDs
+    if ',' in id_param:
+        ids_to_search = [id_str.strip() for id_str in id_param.split(',') if id_str.strip()]
+        
+        for vehicle in vehicles:
+            if str(vehicle.get("id")) in ids_to_search:
+                vehicles_found.append(vehicle)
+    
+    # Se não tem vírgula, busca ID único (comportamento original)
+    else:
         for vehicle in vehicles:
             if str(vehicle.get("id")) == str(id_param):
-                vehicle_found = vehicle
-                break
-        
-        if vehicle_found:
-            # Aplica modo simples se solicitado - CORRIGIDO
-            if simples == "1":
-                fotos = vehicle_found.get("fotos")
-                if isinstance(fotos, list) and len(fotos) > 0:
-                    # Estrutura simples ["foto1", "foto2", ...] - seu caso
-                    if isinstance(fotos[0], str):
-                        vehicle_found["fotos"] = [fotos[0]]  # Mantém só a primeira foto
-                    # Estrutura aninhada [["foto1", "foto2", ...]]
-                    elif isinstance(fotos[0], list) and len(fotos[0]) > 0:
-                        vehicle_found["fotos"] = [[fotos[0][0]]]  # Mantém estrutura aninhada
-                    else:
-                        vehicle_found["fotos"] = []
-                else:
-                    vehicle_found["fotos"] = []
-            
-            # Remove opcionais se não foi pesquisado por opcionais OU por ID
-            if "opcionais" not in filters and not id_param and "opcionais" in vehicle_found:
-                del vehicle_found["opcionais"]
-            
-            return JSONResponse(content={
-                "resultados": [vehicle_found],
-                "total_encontrado": 1,
-                "info": f"Veículo encontrado por ID: {id_param}"
-            })
-        else:
-            return JSONResponse(content={
-                "resultados": [],
-                "total_encontrado": 0,
-                "error": f"Veículo com ID {id_param} não encontrado"
-            })
+                vehicles_found.append(vehicle)
+                break  # Para no primeiro encontrado para manter comportamento original
     
-    # Verifica se há filtros de busca reais (exclui parâmetros especiais)
-    has_search_filters = bool(filters) or valormax or anomax or kmmax or ccmax
-    
-    # Processa IDs a excluir
-    excluded_ids = set()
-    if excluir:
-        excluded_ids = set(e.strip() for e in excluir.split(",") if e.strip())
-    
-    # Se não há filtros de busca, retorna todo o estoque
-    if not has_search_filters:
-        all_vehicles = list(vehicles)
-        
-        # Remove IDs excluídos se especificado
-        if excluded_ids:
-            all_vehicles = [
-                v for v in all_vehicles
-                if str(v.get("id")) not in excluded_ids
-            ]
-        
-        # Ordena por preço decrescente (padrão)
-        sorted_vehicles = sorted(all_vehicles, key=lambda v: search_engine.convert_price(v.get("preco")) or 0, reverse=True)
-        
-        # Aplica modo simples se solicitado - CORRIGIDO
+    if vehicles_found:
+        # Aplica modo simples se solicitado
         if simples == "1":
-            for vehicle in sorted_vehicles:
+            for vehicle in vehicles_found:
                 fotos = vehicle.get("fotos")
                 if isinstance(fotos, list) and len(fotos) > 0:
                     # Estrutura simples ["foto1", "foto2", ...] - seu caso
@@ -969,16 +927,33 @@ def get_data(request: Request):
                 else:
                     vehicle["fotos"] = []
         
-        # Remove opcionais se não foi pesquisado por opcionais OU por ID
-        if "opcionais" not in filters and not id_param:
-            for vehicle in sorted_vehicles:
+        # Remove opcionais se não foi pesquisado por opcionais
+        if "opcionais" not in filters:
+            for vehicle in vehicles_found:
                 if "opcionais" in vehicle:
                     del vehicle["opcionais"]
         
+        # Monta mensagem informativa
+        if ',' in id_param:
+            info_msg = f"Veículos encontrados por IDs: {id_param} ({len(vehicles_found)} encontrado(s))"
+        else:
+            info_msg = f"Veículo encontrado por ID: {id_param}"
+        
         return JSONResponse(content={
-            "resultados": sorted_vehicles,
-            "total_encontrado": len(sorted_vehicles),
-            "info": "Exibindo todo o estoque disponível"
+            "resultados": vehicles_found,
+            "total_encontrado": len(vehicles_found),
+            "info": info_msg
+        })
+    else:
+        if ',' in id_param:
+            error_msg = f"Nenhum veículo encontrado com os IDs: {id_param}"
+        else:
+            error_msg = f"Veículo com ID {id_param} não encontrado"
+        
+        return JSONResponse(content={
+            "resultados": [],
+            "total_encontrado": 0,
+            "error": error_msg
         })
     
     # Executa a busca com fallback
