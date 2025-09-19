@@ -704,7 +704,7 @@ def schedule_tasks():
     wrapped_fetch_and_convert_xml()  # Executa uma vez na inicialização
 
 @app.get("/list")
-def list_vehicles():
+def list_vehicles(request: Request):
     """Endpoint que lista todos os veículos organizados por categoria"""
     
     # Verifica se o arquivo de dados existe
@@ -729,13 +729,32 @@ def list_vehicles():
             status_code=500
         )
     
+    # Extrai parâmetros de filtro da query
+    query_params = dict(request.query_params)
+    filter_categoria = query_params.get("categoria")
+    filter_tipo = query_params.get("tipo")
+    
+    # Aplica filtros se especificados
+    filtered_vehicles = vehicles
+    
+    if filter_categoria:
+        filtered_vehicles = [
+            v for v in filtered_vehicles 
+            if v.get("categoria") and filter_categoria.lower() in v.get("categoria", "").lower()
+        ]
+    
+    if filter_tipo:
+        filtered_vehicles = [
+            v for v in filtered_vehicles 
+            if v.get("tipo") and filter_tipo.lower() in v.get("tipo", "").lower()
+        ]
+    
     # Organiza veículos por categoria
     categorized_vehicles = {}
     nao_mapeados = []
     
-    for vehicle in vehicles:
+    for vehicle in filtered_vehicles:
         categoria = vehicle.get("categoria")
-        tipo = vehicle.get("tipo", "").lower()
         
         # Se não tem categoria, vai para "não mapeados"
         if not categoria or categoria in ["", "None", None]:
@@ -788,50 +807,6 @@ def _format_vehicle(vehicle: Dict) -> str:
             safe_value(vehicle.get("cambio")),
             safe_value(vehicle.get("cilindrada")),
             safe_value(vehicle.get("portas")),
-            safe_value(vehicle.get("preco"))
-        ])
-    
-    # Se for carro: id,tipo,marca,modelo,versao,cor,ano,km,combustivel,cambio,motor,portas,preco
-    else:
-        return ",".join([
-            safe_value(vehicle.get("id")),
-            safe_value(vehicle.get("tipo")),
-            safe_value(vehicle.get("marca")),
-            safe_value(vehicle.get("modelo")),
-            safe_value(vehicle.get("versao")),
-            safe_value(vehicle.get("cor")),
-            safe_value(vehicle.get("ano")),
-            safe_value(vehicle.get("km")),
-            safe_value(vehicle.get("combustivel")),
-            safe_value(vehicle.get("cambio")),
-            safe_value(vehicle.get("motor")),
-            safe_value(vehicle.get("portas")),
-            safe_value(vehicle.get("preco"))
-        ])
-
-def _format_vehicle(vehicle: Dict) -> str:
-    """Formata um veículo conforme especificado"""
-    tipo = vehicle.get("tipo", "").lower()
-    
-    # Função auxiliar para tratar valores None/vazios
-    def safe_value(value):
-        if value is None or value == "":
-            return ""
-        return str(value)
-    
-    # Se for moto: id,tipo,marca,modelo,versao,cor,ano,km,combustivel,cambio,cilindrada,portas,preco
-    if "moto" in tipo:
-        return ",".join([
-            safe_value(vehicle.get("id")),
-            safe_value(vehicle.get("tipo")),
-            safe_value(vehicle.get("marca")),
-            safe_value(vehicle.get("modelo")),
-            safe_value(vehicle.get("versao")),
-            safe_value(vehicle.get("cor")),
-            safe_value(vehicle.get("ano")),
-            safe_value(vehicle.get("km")),
-            safe_value(vehicle.get("combustivel")),
-            safe_value(vehicle.get("cilindrada")),
             safe_value(vehicle.get("preco"))
         ])
     
