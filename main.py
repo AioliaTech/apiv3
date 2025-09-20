@@ -536,6 +536,132 @@ def schedule_tasks():
     scheduler.start()
     wrapped_fetch_and_convert_xml()
 
+@app.get("/api/lookup")
+def lookup_model(request: Request):
+    """
+    Endpoint para buscar informações de categoria/cilindrada baseado no modelo e tipo
+    
+    Parâmetros:
+    - modelo: Nome do modelo do veículo
+    - tipo: Tipo do veículo ('carro' ou 'moto')
+    
+    Retorna:
+    - Para carros: categoria do veículo
+    - Para motos: cilindrada e categoria
+    """
+    query_params = dict(request.query_params)
+    modelo = query_params.get("modelo", "").strip()
+    tipo = query_params.get("tipo", "").strip().lower()
+    
+    if not modelo:
+        return JSONResponse(
+            content={"error": "Parâmetro 'modelo' é obrigatório"}, 
+            status_code=400
+        )
+    
+    if not tipo:
+        return JSONResponse(
+            content={"error": "Parâmetro 'tipo' é obrigatório"}, 
+            status_code=400
+        )
+    
+    if tipo not in ["carro", "moto"]:
+        return JSONResponse(
+            content={"error": "Parâmetro 'tipo' deve ser 'carro' ou 'moto'"}, 
+            status_code=400
+        )
+    
+    # Normaliza o modelo para busca
+    normalized_model = search_engine.normalize_text(modelo)
+    
+    if tipo == "moto":
+        # Busca primeiro no mapeamento direto
+        if normalized_model in MAPEAMENTO_MOTOS:
+            cilindrada, categoria = MAPEAMENTO_MOTOS[normalized_model]
+            return JSONResponse(content={
+                "modelo": modelo,
+                "tipo": tipo,
+                "cilindrada": cilindrada,
+                "categoria": categoria,
+                "match_type": "exact"
+            })
+        
+        # Busca por palavras individuais
+        model_words = normalized_model.split()
+        for word in model_words:
+            if len(word) >= 3 and word in MAPEAMENTO_MOTOS:
+                cilindrada, categoria = MAPEAMENTO_MOTOS[word]
+                return JSONResponse(content={
+                    "modelo": modelo,
+                    "tipo": tipo,
+                    "cilindrada": cilindrada,
+                    "categoria": categoria,
+                    "match_type": "partial_word",
+                    "matched_word": word
+                })
+        
+        # Busca por substring
+        for key, (cilindrada, categoria) in MAPEAMENTO_MOTOS.items():
+            if key in normalized_model or normalized_model in key:
+                return JSONResponse(content={
+                    "modelo": modelo,
+                    "tipo": tipo,
+                    "cilindrada": cilindrada,
+                    "categoria": categoria,
+                    "match_type": "substring",
+                    "matched_key": key
+                })
+        
+        return JSONResponse(content={
+            "modelo": modelo,
+            "tipo": tipo,
+            "cilindrada": None,
+            "categoria": None,
+            "message": "Modelo de moto não encontrado nos mapeamentos"
+        })
+    
+    else:  # tipo == "carro"
+        # Busca primeiro no mapeamento direto
+        if normalized_model in MAPEAMENTO_CATEGORIAS:
+            categoria = MAPEAMENTO_CATEGORIAS[normalized_model]
+            return JSONResponse(content={
+                "modelo": modelo,
+                "tipo": tipo,
+                "categoria": categoria,
+                "match_type": "exact"
+            })
+        
+        # Busca por palavras individuais
+        model_words = normalized_model.split()
+        for word in model_words:
+            if len(word) >= 3 and word in MAPEAMENTO_CATEGORIAS:
+                categoria = MAPEAMENTO_CATEGORIAS[word]
+                return JSONResponse(content={
+                    "modelo": modelo,
+                    "tipo": tipo,
+                    "categoria": categoria,
+                    "match_type": "partial_word",
+                    "matched_word": word
+                })
+        
+        # Busca por substring
+        for key, categoria in MAPEAMENTO_CATEGORIAS.items():
+            if key in normalized_model or normalized_model in key:
+                return JSONResponse(content={
+                    "modelo": modelo,
+                    "tipo": tipo,
+                    "categoria": categoria,
+                    "match_type": "substring",
+                    "matched_key": key
+                })
+        
+        return JSONResponse(content={
+            "modelo": modelo,
+            "tipo": tipo,
+            "categoria": None,
+            "message": "Modelo de carro não encontrado nos mapeamentos"
+        })
+
 @app.get("/list")
 def list_vehicles(request: Request):
     """Endpoint que lista todos os veículos organizados por categoria"""
