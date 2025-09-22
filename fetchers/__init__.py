@@ -12,6 +12,7 @@ from .revendapro_parser import RevendaproParser
 from .clickgarage_parser import ClickGarageParser
 from .simplesveiculo_parser import SimplesVeiculoParser
 from .boom_parser import BoomParser
+from .vitorioso_wordpress_parser import WordpressParser
 
 __all__ = [
     'BaseParser',
