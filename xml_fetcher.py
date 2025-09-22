@@ -15,7 +15,8 @@ from fetchers import (
     RevendaproParser,
     ClickGarageParser,
     SimplesVeiculoParser,
-    BoomParser
+    BoomParser,
+    WordPressParser
 )
 
 # =================== CONFIGURAÇÕES GLOBAIS =======================
@@ -36,7 +37,8 @@ class UnifiedVehicleFetcher:
             AutoconfParser(), 
             SimplesVeiculoParser(),
             RevendaproParser(),
-            BoomParser()  # BoomParser como fallback
+            BoomParser(),
+            WordPressParser()
         ]
         print("[INFO] Sistema unificado iniciado com parsers modularizados")
     
