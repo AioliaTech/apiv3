@@ -15,6 +15,20 @@ from unidecode import unidecode
 class BaseParser(ABC):
     """Classe base abstrata para todos os parsers de veículos"""
     
+    def __init__(self):  # ← ADICIONE ESTE MÉTODO
+        """Inicializa o parser com mapeamentos normalizados"""
+        # Normalizar as chaves do mapeamento de categorias uma vez só
+        self.mapeamento_normalizado = {
+            self.normalizar_texto(modelo): categoria 
+            for modelo, categoria in MAPEAMENTO_CATEGORIAS.items()
+        }
+        
+        # Normalizar as chaves do mapeamento de motos uma vez só
+        self.mapeamento_motos_normalizado = {
+            self.normalizar_texto(modelo): (cilindrada, categoria)
+            for modelo, (cilindrada, categoria) in MAPEAMENTO_MOTOS.items()
+        }
+    
     @abstractmethod
     def can_parse(self, data: Any, url: str) -> bool:
         """Verifica se este parser pode processar os dados da URL fornecida"""
