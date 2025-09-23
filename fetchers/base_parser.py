@@ -121,6 +121,10 @@ class BaseParser(ABC):
         if not texto: 
             return ""
         texto_norm = unidecode(str(texto)).lower()
+        
+        # ← ADICIONE ESTA LINHA: Converte caracteres especiais em espaços
+        texto_norm = re.sub(r'[-_./]', ' ', texto_norm)  # hífen, underscore, ponto, barra
+        
         texto_norm = re.sub(r'[^a-z0-9\s]', '', texto_norm)
         texto_norm = re.sub(r'\s+', ' ', texto_norm).strip()
         return texto_norm
