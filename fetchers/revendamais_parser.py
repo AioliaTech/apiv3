@@ -35,7 +35,7 @@ class RevendamaisParser(BaseParser):
                 )
                 tipo_final = "moto"
             else:
-                categoria_final = self.definir_categoria_veiculo(modelo_veiculo, opcionais_veiculo)
+                categoria_final = definir_categoria_veiculo_global(modelo_veiculo, opcionais_veiculo)
                 cilindrada_final = None
                 tipo_final = v.get("CATEGORY")
 
