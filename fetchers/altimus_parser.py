@@ -54,7 +54,7 @@ class AltimusParser(BaseParser):
                 "cambio": self._normalize_cambio(v.get("cambio")),
                 "motor": self._extract_motor_from_version(versao_veiculo),
                 "portas": v.get("portas"),
-                "categoria": categoria_final or v.get("categoria"),
+                "categoria": categoria_final,
                 "cilindrada": cilindrada_final,
                 "preco": self.converter_preco(v.get("valorVenda") or v.get("preco")),
                 "opcionais": opcionais_veiculo,
