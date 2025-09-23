@@ -25,7 +25,7 @@ suv_models = ["Captiva", "Discovery", "Macan", "JOURNEY", "XC90", "xc60", "tiggo
 for model in suv_models: 
     MAPEAMENTO_CATEGORIAS[model] = "SUV"
 
-caminhonete_models = ["Silverado", "F-1000", "F1000", "duster oroch", "d20", "hilux", "ranger", "s10", "s-10", "L200 Triton", "l200", "triton", "toro", "frontier", "amarok", "maverick", "ram 1500", "rampage", "f-250", "f250", "courier", "dakota", "gladiator", "hoggar"]
+caminhonete_models = ["Silverado", "F-1000", "F1000", "duster oroch", "d20", "hilux", "ranger", "S10", "S-10", "L200 Triton", "l200", "triton", "toro", "frontier", "amarok", "maverick", "ram 1500", "rampage", "f-250", "f250", "courier", "dakota", "gladiator", "hoggar"]
 for model in caminhonete_models: 
     MAPEAMENTO_CATEGORIAS[model] = "Caminhonete"
 
