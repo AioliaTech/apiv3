@@ -68,7 +68,7 @@ class AutoconfParser(BaseParser):
                 "id": v.get("ID"),
                 "tipo": tipo_final,
                 "titulo": None,
-                "versao": self._clean_version(versao_veiculo),
+                "versao": v.get("VERSION"),
                 "marca": v.get("MAKE"),
                 "modelo": modelo_veiculo,
                 "ano": v.get("YEAR"),
