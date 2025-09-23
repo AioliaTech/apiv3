@@ -15,14 +15,10 @@ from unidecode import unidecode
 class BaseParser(ABC):
     """Classe base abstrata para todos os parsers de veículos"""
     
-    def __init__(self):
-        # Cache do mapeamento normalizado para evitar recalcular sempre
-        self._mapeamento_normalizado = None
-    
     @property
     def mapeamento_normalizado(self):
-        """Lazy loading do mapeamento normalizado"""
-        if self._mapeamento_normalizado is None:
+        """Lazy loading do mapeamento normalizado - funciona mesmo sem __init__"""
+        if not hasattr(self, '_mapeamento_normalizado') or self._mapeamento_normalizado is None:
             self._mapeamento_normalizado = {}
             for chave_original, categoria in MAPEAMENTO_CATEGORIAS.items():
                 chave_normalizada = self.normalizar_texto(chave_original)
