@@ -17,19 +17,19 @@ sedan_models = ["A5", "430i", "civic", "a6", "sentra", "jetta", "voyage", "siena
 for model in sedan_models: 
     MAPEAMENTO_CATEGORIAS[model] = "Sedan"
 
-hatch_sedan_models = ["320iA", "onix", "hb20", "yaris", "city", "a3", "corolla", "focus", "fiesta", "corsa", "astra", "vectra", "cruze", "clio", "megane", "206", "207", "307", "tiida", "ka", "versa", "prisma", "polo", "c4", "sonic", "série 1", "série 2", "série 3", "série 4", "série 5", "série 6", "série 7", "classe a", "cla"]
+hatch_sedan_models = ["500", "qq", "320iA", "onix", "hb20", "yaris", "city", "a3", "corolla", "focus", "fiesta", "corsa", "astra", "vectra", "cruze", "clio", "megane", "206", "207", "307", "tiida", "ka", "versa", "prisma", "polo", "c4", "sonic", "série 1", "série 2", "série 3", "série 4", "série 5", "série 6", "série 7", "classe a", "cla"]
 for model in hatch_sedan_models: 
     MAPEAMENTO_CATEGORIAS[model] = "hatch,sedan"
 
-suv_models = ["Captiva", "Discovery", "Macan", "JOURNEY", "XC90", "xc60", "tiggo", "edge", "outlander", "range rover evoque", "song plus", "duster", "ecosport", "hrv", "hr-v", "COMPASS", "compass", "renegade", "tracker", "kicks", "captur", "creta", "tucson", "santa fe", "sorento", "sportage", "pajero", "tr4", "aircross", "tiguan", "t-cross", "tcross", "rav4", "land cruiser", "cherokee", "grand cherokee", "trailblazer", "pulse", "fastback", "territory", "bronco sport", "2008", "3008", "5008", "c4 cactus", "taos", "crv", "cr-v", "corolla cross", "hilux sw4", "sw4", "pajero sport", "commander", "nivus", "equinox", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "ix", "ix1", "ix2", "ix3", "gla", "glb", "glc", "gle", "gls", "classe g", "eqa", "eqb", "eqc", "q2", "q3", "q5", "q7", "q8", "q6 e-tron", "e-tron", "q4 e-tron", "q4etron", "wrx", "xv"]
+suv_models = ["veracruz", "Captiva", "Discovery", "Macan", "JOURNEY", "XC90", "xc60", "tiggo", "edge", "outlander", "range rover evoque", "song plus", "duster", "ecosport", "hrv", "hr-v", "COMPASS", "compass", "renegade", "tracker", "kicks", "captur", "creta", "tucson", "santa fe", "sorento", "sportage", "pajero", "tr4", "aircross", "tiguan", "t-cross", "tcross", "rav4", "land cruiser", "cherokee", "grand cherokee", "trailblazer", "pulse", "fastback", "territory", "bronco sport", "2008", "3008", "5008", "c4 cactus", "taos", "crv", "cr-v", "corolla cross", "hilux sw4", "sw4", "pajero sport", "commander", "nivus", "equinox", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "ix", "ix1", "ix2", "ix3", "gla", "glb", "glc", "gle", "gls", "classe g", "eqa", "eqb", "eqc", "q2", "q3", "q5", "q7", "q8", "q6 e-tron", "e-tron", "q4 e-tron", "q4etron", "wrx", "xv"]
 for model in suv_models: 
     MAPEAMENTO_CATEGORIAS[model] = "SUV"
 
-caminhonete_models = ["S-10 Pick-up", "Silverado", "F-1000", "F1000", "duster oroch", "d20", "hilux", "ranger", "S10", "S-10", "L200 Triton", "l200", "triton", "toro", "frontier", "amarok", "maverick", "ram 1500", "rampage", "f-250", "f250", "courier", "dakota", "gladiator", "hoggar"]
+caminhonete_models = ["f-350", "S-10 Pick-up", "Silverado", "F-1000", "F1000", "duster oroch", "d20", "hilux", "ranger", "S10", "S-10", "L200 Triton", "l200", "triton", "toro", "frontier", "amarok", "maverick", "ram 1500", "rampage", "f-250", "f250", "courier", "dakota", "gladiator", "hoggar"]
 for model in caminhonete_models: 
     MAPEAMENTO_CATEGORIAS[model] = "Caminhonete"
 
-utilitario_models = ["montana", "saveiro", "strada", "oroch", "kangoo", "partner", "doblo", "fiorino", "kombi", "doblo cargo", "berlingo", "combo", "express", "hr"]
+utilitario_models = ["bongo", "montana", "saveiro", "strada", "oroch", "kangoo", "partner", "doblo", "fiorino", "kombi", "doblo cargo", "berlingo", "combo", "express", "hr"]
 for model in utilitario_models: 
     MAPEAMENTO_CATEGORIAS[model] = "Utilitário"
 
