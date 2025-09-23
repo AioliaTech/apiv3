@@ -25,9 +25,10 @@ class AltimusParser(BaseParser):
             versao_veiculo = v.get("versao")
             opcionais_veiculo = self._parse_opcionais(v.get("opcionais"))
             
-            # Determina se é moto ou carro
-            tipo_veiculo = v.get("tipo", "").lower()
-            is_moto = "moto" in tipo_veiculo or "motocicleta" in tipo_veiculo
+            # Determina se é moto ou carro - CORREÇÃO PARA EVITAR ERRO DE None
+            tipo_veiculo = v.get("tipo", "")
+            tipo_veiculo_lower = tipo_veiculo.lower() if tipo_veiculo else ""
+            is_moto = "moto" in tipo_veiculo_lower or "motocicleta" in tipo_veiculo_lower
             
             if is_moto:
                 # Para motos: usa o sistema com modelo E versão
@@ -35,13 +36,13 @@ class AltimusParser(BaseParser):
                     modelo_veiculo, versao_veiculo
                 )
             else:
-                # Para carros: usa o sistema existente
+                # Para carros: usa o sistema existente baseado no modelo
                 categoria_final = self.definir_categoria_veiculo(modelo_veiculo, opcionais_veiculo)
                 cilindrada_final = v.get("cilindrada")
             
             parsed = self.normalize_vehicle({
                 "id": v.get("id"),
-                "tipo": self._determine_tipo(v.get("tipo"), is_moto),
+                "tipo": self._determine_tipo(tipo_veiculo, is_moto),
                 "titulo": None,
                 "versao": versao_veiculo,
                 "marca": v.get("marca"),
@@ -72,6 +73,9 @@ class AltimusParser(BaseParser):
     
     def _determine_tipo(self, tipo_original: str, is_moto: bool) -> str:
         """Determina o tipo final do veículo"""
+        if not tipo_original:
+            return "carro" if not is_moto else "moto"
+            
         if tipo_original in ["Bicicleta", "Patinete Elétrico"]:
             return "eletrico"
         elif is_moto:
@@ -79,7 +83,7 @@ class AltimusParser(BaseParser):
         elif tipo_original == "Carro/Camioneta":
             return "carro"
         else:
-            return tipo_original
+            return tipo_original.lower()
     
     def _normalize_cambio(self, cambio: str) -> str:
         """Normaliza informações de câmbio"""
@@ -89,7 +93,7 @@ class AltimusParser(BaseParser):
         cambio_str = str(cambio).lower()
         if "manual" in cambio_str:
             return "manual"
-        elif "automático" in cambio_str:
+        elif "automático" in cambio_str or "automatico" in cambio_str:
             return "automatico"
         else:
             return cambio
