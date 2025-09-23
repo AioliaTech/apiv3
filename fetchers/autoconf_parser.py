@@ -50,10 +50,17 @@ class AutoconfParser(BaseParser):
                 )
                 tipo_final = "moto"
             else:
-                # Para carros, usa SEMPRE o campo BODY e aplica o mapeamento específico - CORREÇÃO AQUI
-                body_category = v.get("BODY", "")
-                body_category_lower = body_category.lower().strip() if body_category else ""
-                categoria_final = self.CATEGORIA_MAPPING.get(body_category_lower, body_category or "")
+                # Primeiro tenta inferir categoria pelo modelo/versão (como no Autocerto)
+                categoria_modelo = self.definir_categoria_veiculo(modelo_veiculo, opcionais_veiculo)
+                
+                # Se não conseguiu inferir pelo modelo, usa o campo BODY com mapeamento
+                if not categoria_modelo or categoria_modelo == "Não informado":
+                    body_category = v.get("BODY", "")
+                    body_category_lower = body_category.lower().strip() if body_category else ""
+                    categoria_final = self.CATEGORIA_MAPPING.get(body_category_lower, body_category or "Não informado")
+                else:
+                    categoria_final = categoria_modelo
+                    
                 cilindrada_final = None
                 tipo_final = "carro" if categoria_veiculo_lower == "carros" else categoria_veiculo
 
