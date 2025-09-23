@@ -62,6 +62,7 @@ for model in offroad_models:
 # Mapeamento combinado: cilindrada e categoria
 MAPEAMENTO_MOTOS = {
     # Street/Urbanas (commuter básicas e econômicas)
+    "EN": (125, "street"),
     "scram 411": (400, "street"),
     "DK 150": (150, "street"),
     "SPEED 400": (400, "street"),
