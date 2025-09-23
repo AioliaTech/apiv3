@@ -4,7 +4,6 @@ Parser específico para Revendamais (revendamais.com.br)
 
 from .base_parser import BaseParser
 from typing import Dict, List, Any
-from .base_parser import definir_categoria_veiculo_global
 
 class RevendamaisParser(BaseParser):
     """Parser para dados do Revendamais"""
