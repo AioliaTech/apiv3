@@ -139,16 +139,7 @@ class BaseParser(ABC):
         texto_norm = re.sub(r'\s+', ' ', texto_norm).strip()
         return texto_norm
     
-    def definir_categoria_veiculo(self, modelo: str, opcionais: str = "") -> str:
-        """
-        Define a categoria de um veículo usando busca EXATA no mapeamento.
-        Para modelos ambíguos ("hatch,sedan"), usa os opcionais para decidir.
-        CORRIGIDO: Usa mapeamento normalizado com busca por especificidade (mais longo = mais específico)
-        """
-        if not modelo: 
-            return None
-        
-        # Normaliza o modelo do feed para uma busca exata
+# Normaliza o modelo do feed para uma busca exata
         modelo_norm = self.normalizar_texto(modelo)
         
         # ETAPA 1: Busca pela chave EXATA no mapeamento normalizado
@@ -173,7 +164,9 @@ class BaseParser(ABC):
         matches_normais = []   # Para outras categorias
         
         for chave_normalizada, categoria in self.mapeamento_normalizado.items():
-            if chave_normalizada in modelo_norm:  # Se a chave está contida no modelo
+            # Busca parcial: verifica se a chave está contida no modelo OU se o modelo contém as palavras da chave
+            if (chave_normalizada in modelo_norm or 
+                all(palavra in modelo_norm.split() for palavra in chave_normalizada.split() if palavra)):
                 comprimento = len(chave_normalizada)
                 
                 if categoria == "hatch,sedan":
