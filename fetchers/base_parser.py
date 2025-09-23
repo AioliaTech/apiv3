@@ -15,20 +15,6 @@ from unidecode import unidecode
 class BaseParser(ABC):
     """Classe base abstrata para todos os parsers de veículos"""
     
-    def __init__(self):  # ← ADICIONE ESTE MÉTODO
-        """Inicializa o parser com mapeamentos normalizados"""
-        # Normalizar as chaves do mapeamento de categorias uma vez só
-        self.mapeamento_normalizado = {
-            self.normalizar_texto(modelo): categoria 
-            for modelo, categoria in MAPEAMENTO_CATEGORIAS.items()
-        }
-        
-        # Normalizar as chaves do mapeamento de motos uma vez só
-        self.mapeamento_motos_normalizado = {
-            self.normalizar_texto(modelo): (cilindrada, categoria)
-            for modelo, (cilindrada, categoria) in MAPEAMENTO_MOTOS.items()
-        }
-    
     @abstractmethod
     def can_parse(self, data: Any, url: str) -> bool:
         """Verifica se este parser pode processar os dados da URL fornecida"""
@@ -147,44 +133,30 @@ class BaseParser(ABC):
         if not modelo: 
             return None
         
-        # Normaliza o modelo do feed para uma busca exata
         modelo_norm = self.normalizar_texto(modelo)
         
-        # Busca pela chave exata no mapeamento
-        categoria_result = MAPEAMENTO_CATEGORIAS.get(modelo_norm)
-        
-        # Se encontrou uma correspondência exata
-        if categoria_result:
-            if categoria_result == "hatch,sedan":
-                opcionais_norm = self.normalizar_texto(opcionais)
-                opcional_chave_norm = self.normalizar_texto(OPCIONAL_CHAVE_HATCH)
-                if opcional_chave_norm in opcionais_norm:
-                    return "Hatch"
-                else:
-                    return "Sedan"
-            else:
-                # Para todos os outros casos (SUV, Caminhonete, etc.)
-                return categoria_result
-                
-        # Se não encontrou correspondência exata, verifica os modelos ambíguos
-        # Isso é útil para casos como "Onix LTZ" corresponder a "onix"
-        for modelo_mapeado, categoria_ambigua in MAPEAMENTO_CATEGORIAS.items():
-            if categoria_ambigua == "hatch,sedan":
-                if self.normalizar_texto(modelo_mapeado) in modelo_norm:
+        # Busca exata - normaliza AMBOS os lados para comparação
+        for modelo_mapeado, categoria_result in MAPEAMENTO_CATEGORIAS.items():
+            if self.normalizar_texto(modelo_mapeado) == modelo_norm:
+                if categoria_result == "hatch,sedan":
                     opcionais_norm = self.normalizar_texto(opcionais)
                     opcional_chave_norm = self.normalizar_texto(OPCIONAL_CHAVE_HATCH)
-                    if opcional_chave_norm in opcionais_norm:
-                        return "Hatch"
-                    else:
-                        return "Sedan"
+                    return "Hatch" if opcional_chave_norm in opcionais_norm else "Sedan"
+                else:
+                    return categoria_result
         
-        # Busca parcial para categorias não ambíguas
+        # Busca parcial - para casos como "Onix LTZ" corresponder a "onix"
         for modelo_mapeado, categoria in MAPEAMENTO_CATEGORIAS.items():
-            if categoria != "hatch,sedan":  # Pula os ambíguos que já foram tratados acima
-                if self.normalizar_texto(modelo_mapeado) in modelo_norm:
+            modelo_mapeado_norm = self.normalizar_texto(modelo_mapeado)
+            if modelo_mapeado_norm in modelo_norm:
+                if categoria == "hatch,sedan":
+                    opcionais_norm = self.normalizar_texto(opcionais)
+                    opcional_chave_norm = self.normalizar_texto(OPCIONAL_CHAVE_HATCH)
+                    return "Hatch" if opcional_chave_norm in opcionais_norm else "Sedan"
+                else:
                     return categoria
         
-        return None # Nenhuma correspondência encontrada
+        return None  # Nenhuma correspondência encontrada
     
     def inferir_cilindrada_e_categoria_moto(self, modelo: str, versao: str = ""):
         """
