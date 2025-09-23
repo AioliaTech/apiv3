@@ -12,103 +12,22 @@ from vehicle_mappings import (
 import re
 from unidecode import unidecode
 
-# Cache global para evitar recriação constante
-_MAPEAMENTO_NORMALIZADO_CACHE = None
-
-def _get_mapeamento_normalizado():
-    """Função utilitária para obter mapeamento normalizado com cache global"""
-    global _MAPEAMENTO_NORMALIZADO_CACHE
-    if _MAPEAMENTO_NORMALIZADO_CACHE is None:
-        _MAPEAMENTO_NORMALIZADO_CACHE = {}
-        for chave_original, categoria in MAPEAMENTO_CATEGORIAS.items():
-            # Normaliza texto igual a função normalizar_texto
-            texto_norm = unidecode(str(chave_original)).lower()
-            texto_norm = re.sub(r'[^a-z0-9\s]', '', texto_norm)
-            texto_norm = re.sub(r'\s+', ' ', texto_norm).strip()
-            _MAPEAMENTO_NORMALIZADO_CACHE[texto_norm] = categoria
-    return _MAPEAMENTO_NORMALIZADO_CACHE
-
-def definir_categoria_veiculo_global(modelo: str, opcionais: str = "") -> str:
-    """
-    Função global para definir categoria - pode ser usada por qualquer parser
-    mesmo que não herde corretamente do BaseParser
-    """
-    if not modelo: 
-        return None
-    
-    # Normaliza o modelo do feed
-    texto_norm = unidecode(str(modelo)).lower()
-    texto_norm = re.sub(r'[^a-z0-9\s]', '', texto_norm)
-    modelo_norm = re.sub(r'\s+', ' ', texto_norm).strip()
-    
-    mapeamento = _get_mapeamento_normalizado()
-    
-    # ETAPA 1: Busca EXATA
-    categoria_result = mapeamento.get(modelo_norm)
-    if categoria_result:
-        if categoria_result == "hatch,sedan":
-            opcionais_norm = unidecode(str(opcionais)).lower() if opcionais else ""
-            opcionais_norm = re.sub(r'[^a-z0-9\s]', '', opcionais_norm)
-            opcionais_norm = re.sub(r'\s+', ' ', opcionais_norm).strip()
-            
-            opcional_chave_norm = unidecode(str(OPCIONAL_CHAVE_HATCH)).lower()
-            opcional_chave_norm = re.sub(r'[^a-z0-9\s]', '', opcional_chave_norm)
-            opcional_chave_norm = re.sub(r'\s+', ' ', opcional_chave_norm).strip()
-            
-            if opcional_chave_norm in opcionais_norm:
-                return "Hatch"
-            else:
-                return "Sedan"
-        else:
-            return categoria_result
-    
-    # ETAPA 2: Busca PARCIAL por especificidade
-    matches_ambiguos = []
-    matches_normais = []
-    
-    for chave_normalizada, categoria in mapeamento.items():
-        # Busca parcial melhorada
-        if (chave_normalizada in modelo_norm or 
-            all(palavra in modelo_norm.split() for palavra in chave_normalizada.split() if palavra)):
-            
-            comprimento = len(chave_normalizada)
-            if categoria == "hatch,sedan":
-                matches_ambiguos.append((chave_normalizada, categoria, comprimento))
-            else:
-                matches_normais.append((chave_normalizada, categoria, comprimento))
-    
-    # ETAPA 3: Processa ambíguos primeiro
-    if matches_ambiguos:
-        matches_ambiguos.sort(key=lambda x: x[2], reverse=True)
-        
-        opcionais_norm = unidecode(str(opcionais)).lower() if opcionais else ""
-        opcionais_norm = re.sub(r'[^a-z0-9\s]', '', opcionais_norm)
-        opcionais_norm = re.sub(r'\s+', ' ', opcionais_norm).strip()
-        
-        opcional_chave_norm = unidecode(str(OPCIONAL_CHAVE_HATCH)).lower()
-        opcional_chave_norm = re.sub(r'[^a-z0-9\s]', '', opcional_chave_norm)
-        opcional_chave_norm = re.sub(r'\s+', ' ', opcional_chave_norm).strip()
-        
-        if opcional_chave_norm in opcionais_norm:
-            return "Hatch"
-        else:
-            return "Sedan"
-    
-    # ETAPA 4: Processa categorias normais
-    if matches_normais:
-        matches_normais.sort(key=lambda x: x[2], reverse=True)
-        _, categoria_mais_especifica, _ = matches_normais[0]
-        return categoria_mais_especifica
-    
-    return None
-
 class BaseParser(ABC):
     """Classe base abstrata para todos os parsers de veículos"""
     
+    def __init__(self):
+        # Cache do mapeamento normalizado para evitar recalcular sempre
+        self._mapeamento_normalizado = None
+    
     @property
     def mapeamento_normalizado(self):
-        """Lazy loading do mapeamento normalizado - funciona mesmo sem __init__"""
-        return _get_mapeamento_normalizado()
+        """Lazy loading do mapeamento normalizado"""
+        if self._mapeamento_normalizado is None:
+            self._mapeamento_normalizado = {}
+            for chave_original, categoria in MAPEAMENTO_CATEGORIAS.items():
+                chave_normalizada = self.normalizar_texto(chave_original)
+                self._mapeamento_normalizado[chave_normalizada] = categoria
+        return self._mapeamento_normalizado
     
     @abstractmethod
     def can_parse(self, data: Any, url: str) -> bool:
@@ -220,7 +139,16 @@ class BaseParser(ABC):
         texto_norm = re.sub(r'\s+', ' ', texto_norm).strip()
         return texto_norm
     
-# Normaliza o modelo do feed para uma busca exata
+    def definir_categoria_veiculo(self, modelo: str, opcionais: str = "") -> str:
+        """
+        Define a categoria de um veículo usando busca EXATA no mapeamento.
+        Para modelos ambíguos ("hatch,sedan"), usa os opcionais para decidir.
+        CORRIGIDO: Usa mapeamento normalizado com busca por especificidade (mais longo = mais específico)
+        """
+        if not modelo: 
+            return None
+        
+        # Normaliza o modelo do feed para uma busca exata
         modelo_norm = self.normalizar_texto(modelo)
         
         # ETAPA 1: Busca pela chave EXATA no mapeamento normalizado
@@ -245,9 +173,7 @@ class BaseParser(ABC):
         matches_normais = []   # Para outras categorias
         
         for chave_normalizada, categoria in self.mapeamento_normalizado.items():
-            # Busca parcial: verifica se a chave está contida no modelo OU se o modelo contém as palavras da chave
-            if (chave_normalizada in modelo_norm or 
-                all(palavra in modelo_norm.split() for palavra in chave_normalizada.split() if palavra)):
+            if chave_normalizada in modelo_norm:  # Se a chave está contida no modelo
                 comprimento = len(chave_normalizada)
                 
                 if categoria == "hatch,sedan":
