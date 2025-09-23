@@ -17,7 +17,7 @@ sedan_models = ["arrizo6", "arrizo 6", "A5", "430i", "civic", "a6", "sentra", "j
 for model in sedan_models: 
     MAPEAMENTO_CATEGORIAS[model] = "Sedan"
 
-hatch_sedan_models = ["320iA", "onix", "hb20", "yaris", "city", "a3", "corolla", "focus", "fiesta", "corsa", "astra", "vectra", "cruze", "clio", "megane", "206", "207", "307", "tiida", "ka", "versa", "prisma", "polo", "c4", "sonic", "série 1", "série 2", "série 3", "série 4", "série 5", "série 6", "série 7", "classe a", "cla"]
+hatch_sedan_models = ["330e", "320iA", "onix", "hb20", "yaris", "city", "a3", "corolla", "focus", "fiesta", "corsa", "astra", "vectra", "cruze", "clio", "megane", "206", "207", "307", "tiida", "ka", "versa", "prisma", "polo", "c4", "sonic", "série 1", "série 2", "série 3", "série 4", "série 5", "série 6", "série 7", "classe a", "cla"]
 for model in hatch_sedan_models: 
     MAPEAMENTO_CATEGORIAS[model] = "hatch,sedan"
 
@@ -25,7 +25,7 @@ suv_models = ["RANGE ROVER SPORT", "GLK 220", "disc spt", "veracruz", "Captiva",
 for model in suv_models: 
     MAPEAMENTO_CATEGORIAS[model] = "SUV"
 
-caminhonete_models = ["f-350", "S-10 Pick-up", "Silverado", "F-1000", "F1000", "duster oroch", "d20", "hilux", "ranger", "S10", "S-10", "L200 Triton", "l200", "triton", "toro", "frontier", "amarok", "maverick", "ram 1500", "rampage", "f-250", "f250", "courier", "dakota", "gladiator", "hoggar"]
+caminhonete_models = ["D-20", "f-350", "S-10 Pick-up", "Silverado", "F-1000", "F1000", "duster oroch", "d20", "hilux", "ranger", "S10", "S-10", "L200 Triton", "l200", "triton", "toro", "frontier", "amarok", "maverick", "ram 1500", "rampage", "f-250", "f250", "courier", "dakota", "gladiator", "hoggar"]
 for model in caminhonete_models: 
     MAPEAMENTO_CATEGORIAS[model] = "Caminhonete"
 
