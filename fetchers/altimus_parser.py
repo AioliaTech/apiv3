@@ -31,14 +31,12 @@ class AltimusParser(BaseParser):
             is_moto = "moto" in tipo_veiculo_lower or "motocicleta" in tipo_veiculo_lower
             
             if is_moto:
-                # Para motos: usa o sistema com modelo E versão
                 cilindrada_final, categoria_final = self.inferir_cilindrada_e_categoria_moto(
                     modelo_veiculo, versao_veiculo
                 )
             else:
-                # Para carros: usa o sistema existente baseado no modelo
                 categoria_final = self.definir_categoria_veiculo(modelo_veiculo, opcionais_veiculo)
-                cilindrada_final = v.get("cilindrada")
+                cilindrada_final = None
             
             parsed = self.normalize_vehicle({
                 "id": v.get("id"),
