@@ -15,20 +15,6 @@ from unidecode import unidecode
 class BaseParser(ABC):
     """Classe base abstrata para todos os parsers de veículos"""
     
-    def __init__(self):
-        # Cache do mapeamento normalizado para evitar recalcular sempre
-        self._mapeamento_normalizado = None
-    
-    @property
-    def mapeamento_normalizado(self):
-        """Lazy loading do mapeamento normalizado"""
-        if self._mapeamento_normalizado is None:
-            self._mapeamento_normalizado = {}
-            for chave_original, categoria in MAPEAMENTO_CATEGORIAS.items():
-                chave_normalizada = self.normalizar_texto(chave_original)
-                self._mapeamento_normalizado[chave_normalizada] = categoria
-        return self._mapeamento_normalizado
-    
     @abstractmethod
     def can_parse(self, data: Any, url: str) -> bool:
         """Verifica se este parser pode processar os dados da URL fornecida"""
@@ -143,7 +129,6 @@ class BaseParser(ABC):
         """
         Define a categoria de um veículo usando busca EXATA no mapeamento.
         Para modelos ambíguos ("hatch,sedan"), usa os opcionais para decidir.
-        CORRIGIDO: Usa mapeamento normalizado com busca por especificidade (mais longo = mais específico)
         """
         if not modelo: 
             return None
@@ -151,8 +136,8 @@ class BaseParser(ABC):
         # Normaliza o modelo do feed para uma busca exata
         modelo_norm = self.normalizar_texto(modelo)
         
-        # ETAPA 1: Busca pela chave EXATA no mapeamento normalizado
-        categoria_result = self.mapeamento_normalizado.get(modelo_norm)
+        # Busca pela chave exata no mapeamento
+        categoria_result = MAPEAMENTO_CATEGORIAS.get(modelo_norm)
         
         # Se encontrou uma correspondência exata
         if categoria_result:
@@ -166,42 +151,24 @@ class BaseParser(ABC):
             else:
                 # Para todos os outros casos (SUV, Caminhonete, etc.)
                 return categoria_result
-        
-        # ETAPA 2: Se não encontrou exata, busca PARCIAL ordenada por ESPECIFICIDADE
-        # Coleta todas as correspondências parciais com seus comprimentos
-        matches_ambiguos = []  # Para modelos hatch,sedan
-        matches_normais = []   # Para outras categorias
-        
-        for chave_normalizada, categoria in self.mapeamento_normalizado.items():
-            if chave_normalizada in modelo_norm:  # Se a chave está contida no modelo
-                comprimento = len(chave_normalizada)
                 
-                if categoria == "hatch,sedan":
-                    matches_ambiguos.append((chave_normalizada, categoria, comprimento))
-                else:
-                    matches_normais.append((chave_normalizada, categoria, comprimento))
+        # Se não encontrou correspondência exata, verifica os modelos ambíguos
+        # Isso é útil para casos como "Onix LTZ" corresponder a "onix"
+        for modelo_mapeado, categoria_ambigua in MAPEAMENTO_CATEGORIAS.items():
+            if categoria_ambigua == "hatch,sedan":
+                if self.normalizar_texto(modelo_mapeado) in modelo_norm:
+                    opcionais_norm = self.normalizar_texto(opcionais)
+                    opcional_chave_norm = self.normalizar_texto(OPCIONAL_CHAVE_HATCH)
+                    if opcional_chave_norm in opcionais_norm:
+                        return "Hatch"
+                    else:
+                        return "Sedan"
         
-        # ETAPA 3: Processa modelos ambíguos primeiro (ordenados por especificidade)
-        if matches_ambiguos:
-            # Ordena por comprimento decrescente (mais específico primeiro)
-            matches_ambiguos.sort(key=lambda x: x[2], reverse=True)
-            # Pega o mais específico
-            chave_mais_especifica, _, _ = matches_ambiguos[0]
-            
-            opcionais_norm = self.normalizar_texto(opcionais)
-            opcional_chave_norm = self.normalizar_texto(OPCIONAL_CHAVE_HATCH)
-            if opcional_chave_norm in opcionais_norm:
-                return "Hatch"
-            else:
-                return "Sedan"
-        
-        # ETAPA 4: Se não tem ambíguos, processa categorias normais (ordenadas por especificidade)
-        if matches_normais:
-            # Ordena por comprimento decrescente (mais específico primeiro)
-            matches_normais.sort(key=lambda x: x[2], reverse=True)
-            # Retorna a categoria da correspondência mais específica
-            _, categoria_mais_especifica, _ = matches_normais[0]
-            return categoria_mais_especifica
+        # Busca parcial para categorias não ambíguas
+        for modelo_mapeado, categoria in MAPEAMENTO_CATEGORIAS.items():
+            if categoria != "hatch,sedan":  # Pula os ambíguos que já foram tratados acima
+                if self.normalizar_texto(modelo_mapeado) in modelo_norm:
+                    return categoria
         
         return None # Nenhuma correspondência encontrada
     
