@@ -39,9 +39,10 @@ class AutoconfParser(BaseParser):
             versao_veiculo = v.get("VERSION")
             opcionais_veiculo = self._parse_features(v.get("FEATURES"))
             
-            # Determina se é moto ou carro
-            categoria_veiculo = v.get("CATEGORY", "").lower()
-            is_moto = categoria_veiculo == "motos" or "moto" in categoria_veiculo
+            # Determina se é moto ou carro - CORREÇÃO AQUI
+            categoria_veiculo = v.get("CATEGORY", "")
+            categoria_veiculo_lower = categoria_veiculo.lower() if categoria_veiculo else ""
+            is_moto = categoria_veiculo_lower == "motos" or "moto" in categoria_veiculo_lower
             
             if is_moto:
                 cilindrada_final, categoria_final = self.inferir_cilindrada_e_categoria_moto(
@@ -49,11 +50,12 @@ class AutoconfParser(BaseParser):
                 )
                 tipo_final = "moto"
             else:
-                # Para carros, usa SEMPRE o campo BODY e aplica o mapeamento específico
-                body_category = v.get("BODY", "").lower().strip()
-                categoria_final = self.CATEGORIA_MAPPING.get(body_category, v.get("BODY"))
+                # Para carros, usa SEMPRE o campo BODY e aplica o mapeamento específico - CORREÇÃO AQUI
+                body_category = v.get("BODY", "")
+                body_category_lower = body_category.lower().strip() if body_category else ""
+                categoria_final = self.CATEGORIA_MAPPING.get(body_category_lower, body_category or "")
                 cilindrada_final = None
-                tipo_final = "carro" if categoria_veiculo == "carros" else categoria_veiculo
+                tipo_final = "carro" if categoria_veiculo_lower == "carros" else categoria_veiculo
 
             parsed = self.normalize_vehicle({
                 "id": v.get("ID"),
