@@ -9,7 +9,7 @@ OPCIONAL_CHAVE_HATCH = "limpador traseiro"
 
 # --- Listas de Modelos por Categoria ---
 
-hatch_models = ["308", "IX35", "A 200", "a200", "joy", "gol", "uno", "palio", "celta", "march", "sandero", "i30", "golf", "fox", "up", "fit", "etios", "bravo", "punto", "208", "argo", "mobi", "c3", "picanto", "stilo", "c4 vtr", "kwid", "soul", "agile", "fusca", "a1", "new beetle", "116i", "118i", "120i", "125i", "m135i", "m140i"]
+hatch_models = ["500", "QQ", "308", "IX35", "A 200", "a200", "joy", "gol", "uno", "palio", "celta", "march", "sandero", "i30", "golf", "fox", "up", "fit", "etios", "bravo", "punto", "208", "argo", "mobi", "c3", "picanto", "stilo", "c4 vtr", "kwid", "soul", "agile", "fusca", "a1", "new beetle", "116i", "118i", "120i", "125i", "m135i", "m140i"]
 for model in hatch_models: 
     MAPEAMENTO_CATEGORIAS[model] = "Hatch"
 
@@ -17,7 +17,7 @@ sedan_models = ["A5", "430i", "civic", "a6", "sentra", "jetta", "voyage", "siena
 for model in sedan_models: 
     MAPEAMENTO_CATEGORIAS[model] = "Sedan"
 
-hatch_sedan_models = ["500", "QQ", "320iA", "onix", "hb20", "yaris", "city", "a3", "corolla", "focus", "fiesta", "corsa", "astra", "vectra", "cruze", "clio", "megane", "206", "207", "307", "tiida", "ka", "versa", "prisma", "polo", "c4", "sonic", "série 1", "série 2", "série 3", "série 4", "série 5", "série 6", "série 7", "classe a", "cla"]
+hatch_sedan_models = ["320iA", "onix", "hb20", "yaris", "city", "a3", "corolla", "focus", "fiesta", "corsa", "astra", "vectra", "cruze", "clio", "megane", "206", "207", "307", "tiida", "ka", "versa", "prisma", "polo", "c4", "sonic", "série 1", "série 2", "série 3", "série 4", "série 5", "série 6", "série 7", "classe a", "cla"]
 for model in hatch_sedan_models: 
     MAPEAMENTO_CATEGORIAS[model] = "hatch,sedan"
 
