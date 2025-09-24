@@ -10,10 +10,16 @@ class DSAutoEstoqueParser(BaseParser):
     
     def can_parse(self, data: Any, url: str) -> bool:
         """Verifica se pode processar dados do DSAutoEstoque"""
-        return "dsautoestoque.com" in url.lower()
+        result = "dsautoestoque.com" in url.lower()
+        print(f"[DEBUG] can_parse chamado - URL: {url}")
+        print(f"[DEBUG] can_parse resultado: {result}")
+        print(f"[DEBUG] Tipo do data em can_parse: {type(data)}")
+        return result
     
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados JSON do DSAutoEstoque"""
+        print(f"[DEBUG] ===== PARSER CHAMADO =====")
+        print(f"[DEBUG] URL: {url}")
         print(f"[DEBUG] Tipo original do data: {type(data)}")
         print(f"[DEBUG] Data (primeiros 200 chars): {str(data)[:200]}")
         
