@@ -21,6 +21,10 @@ class DSAutoEstoqueParser(BaseParser):
             except json.JSONDecodeError as e:
                 raise ValueError(f"Erro ao fazer parse do JSON: {e}")
         
+        # Verifica se data é None ou vazio
+        if not data:
+            return []
+        
         parsed_vehicles = []
         
         # Busca pelos veículos no JSON
@@ -44,6 +48,10 @@ class DSAutoEstoqueParser(BaseParser):
             veiculos = data
         
         for v in veiculos:
+            # Verifica se v é dict antes de usar .get()
+            if not isinstance(v, dict):
+                continue
+                
             # Extrai dados básicos
             id_veiculo = str(v.get('id', ''))
             tipo_veiculo = v.get('tipoveiculo', '')
