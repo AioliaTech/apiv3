@@ -14,15 +14,23 @@ class DSAutoEstoqueParser(BaseParser):
     
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados JSON do DSAutoEstoque"""
+        print(f"[DEBUG] Tipo original do data: {type(data)}")
+        print(f"[DEBUG] Data (primeiros 200 chars): {str(data)[:200]}")
+        
         # Se data for string JSON, parse primeiro
         if isinstance(data, str):
             try:
                 data = json.loads(data)
+                print(f"[DEBUG] Após JSON parse - Tipo: {type(data)}")
+                print(f"[DEBUG] Chaves disponíveis: {list(data.keys()) if isinstance(data, dict) else 'N/A'}")
             except json.JSONDecodeError as e:
-                raise ValueError(f"Erro ao fazer parse do JSON: {e}")
+                print(f"[ERROR] Erro ao fazer parse do JSON: {e}")
+                print(f"[ERROR] Data que causou erro: {str(data)[:500]}")
+                return []
         
         # Verifica se data é None ou vazio
         if not data:
+            print("[DEBUG] Data está vazio")
             return []
         
         parsed_vehicles = []
