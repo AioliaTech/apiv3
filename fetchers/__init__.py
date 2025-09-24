@@ -24,5 +24,6 @@ __all__ = [
     'RevendaproParser',
     'ClickGarageParser',
     'SimplesVeiculoParser',
+    'DSAutoEstoqueParser',
     'BoomParser'
 ]
