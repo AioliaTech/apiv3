@@ -1,33 +1,21 @@
 """
-Parser específico para DSAutoEstoque (dsautoestoque.com) - JSON
+Parser específico para DSAutoEstoque (dsautoestoque.com)
 """
+
 from .base_parser import BaseParser
 from typing import Dict, List, Any
-import json
+import re
 
 class DSAutoEstoqueParser(BaseParser):
-    """Parser para dados JSON do DSAutoEstoque"""
+    """Parser para dados do DSAutoEstoque"""
     
     def can_parse(self, data: Any, url: str) -> bool:
         """Verifica se pode processar dados do DSAutoEstoque"""
         return "dsautoestoque.com" in url.lower()
     
     def parse(self, data: Any, url: str) -> List[Dict]:
-        """Processa dados JSON do DSAutoEstoque"""
-        # Se data for string JSON, parse primeiro
-        if isinstance(data, str):
-            data = json.loads(data)
-        
-        # Extrai lista de veículos do JSON
-        if "resultados" in data:
-            veiculos = data["resultados"]
-        elif "veiculos" in data:
-            veiculos = data["veiculos"]
-        elif isinstance(data, list):
-            veiculos = data
-        else:
-            veiculos = []
-        
+        """Processa dados do DSAutoEstoque"""
+        veiculos = data["estoque"]["veiculo"]
         if isinstance(veiculos, dict):
             veiculos = [veiculos]
         
@@ -51,11 +39,9 @@ class DSAutoEstoqueParser(BaseParser):
             
             parsed = self.normalize_vehicle({
                 "id": v.get("id"),
-                "tipo": "moto" if is_moto else "carro",
-                "zero_km": v.get("zerokm") == "S",
-                "placa": v.get("placa"),
+                "tipo": "moto" if is_moto else v.get("tipoveiculo"),
                 "titulo": None,
-                "versao": versao_veiculo,
+                "versao": v.get('versao'),
                 "marca": v.get("marca"),
                 "modelo": modelo_veiculo,
                 "ano": v.get("anomodelo"),
@@ -64,7 +50,7 @@ class DSAutoEstoqueParser(BaseParser):
                 "cor": v.get("cor"),
                 "combustivel": v.get("combustivel"),
                 "cambio": v.get("cambio"),
-                "motor": self._extract_motor_from_version(versao_veiculo),
+                "motor": self._extract_motor_from_version(v.get("versao")),
                 "portas": v.get("portas"),
                 "categoria": categoria_final,
                 "cilindrada": cilindrada_final,
@@ -88,16 +74,14 @@ class DSAutoEstoqueParser(BaseParser):
     def _extract_photos(self, v: Dict) -> List[str]:
         """Extrai fotos do veículo DSAutoEstoque"""
         fotos = v.get("fotos")
-        if not fotos:
+        if not fotos or not (fotos_foto := fotos.get("foto")):
             return []
         
-        if isinstance(fotos, list):
-            return [foto.split("?")[0] for foto in fotos if isinstance(foto, str)]
-        elif isinstance(fotos, dict) and "foto" in fotos:
-            fotos_foto = fotos["foto"]
-            if isinstance(fotos_foto, list):
-                return [foto.split("?")[0] for foto in fotos_foto if isinstance(foto, str)]
-            else:
-                return [fotos_foto.split("?")[0]] if isinstance(fotos_foto, str) else []
+        if isinstance(fotos_foto, dict):
+            fotos_foto = [fotos_foto]
         
-        return []
+        return [
+            img["url"].split("?")[0] if isinstance(img, dict) and "url" in img else img.split("?")[0]
+            for img in fotos_foto 
+            if img
+        ]
