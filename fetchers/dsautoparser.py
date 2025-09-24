@@ -5,7 +5,6 @@ Parser específico para DSAutoEstoque (dsautoestoque.com)
 from .base_parser import BaseParser
 from typing import Dict, List, Any
 import re
-import xml.etree.ElementTree as ET
 
 class DSAutoEstoqueParser(BaseParser):
     """Parser para dados do DSAutoEstoque"""
@@ -16,87 +15,66 @@ class DSAutoEstoqueParser(BaseParser):
     
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados do DSAutoEstoque"""
-        # Assume data is a string containing XML
-        try:
-            root = ET.fromstring(data)
-        except ET.ParseError:
-            return []
-        
-        veiculos = root.findall("veiculo")
-        if not veiculos:
-            return []
+        veiculos = data["estoque"]["veiculo"]
+        if isinstance(veiculos, dict):
+            veiculos = [veiculos]
         
         parsed_vehicles = []
         for v in veiculos:
-            modelo_veiculo = self._extract_text(v.find("modelo"))
-            versao_veiculo = self._extract_text(v.find("versao"))
-            opcionais_veiculo = self._parse_opcionais(v.find("opcionais"))
+            modelo_veiculo = v.get("modelo")
+            versao_veiculo = v.get("versao")
+            opcionais_veiculo = self._parse_opcionais(v.get("opcionais"))
             
             # Determina se é moto ou carro baseado em tipoveiculo
-            tipo_veiculo = self._extract_text(v.find("tipoveiculo")).lower()
+            tipo_veiculo = v.get("tipoveiculo", "").lower()
             is_moto = "moto" in tipo_veiculo or "motocicleta" in tipo_veiculo
             
+            # Tenta extrair categoria de "carroceria", senão usa definir_categoria_veiculo
+            categoria_final = v.get("carroceria")
+            if not categoria_final:
+                categoria_final = self.definir_categoria_veiculo(modelo_veiculo, opcionais_veiculo)
+            
             if is_moto:
-                cilindrada_final, categoria_final = self.inferir_cilindrada_e_categoria_moto(
+                cilindrada_final, _ = self.inferir_cilindrada_e_categoria_moto(
                     modelo_veiculo, versao_veiculo
                 )
             else:
-                categoria_final = self.definir_categoria_veiculo(modelo_veiculo, opcionais_veiculo)
                 cilindrada_final = None
             
             parsed = self.normalize_vehicle({
-                "id": self._extract_text(v.find("id")),
-                "tipo": "moto" if is_moto else tipo_veiculo.capitalize(),
+                "id": v.get("id"),
+                "tipo": "moto" if is_moto else v.get("tipoveiculo"),
                 "titulo": None,
-                "versao": versao_veiculo,
-                "marca": self._extract_text(v.find("marca")),
+                "versao": v.get('versao'),
+                "marca": v.get("marca"),
                 "modelo": modelo_veiculo,
-                "ano": self._extract_int(v.find("anomodelo")),
-                "ano_fabricacao": self._extract_int(v.find("anofabricacao")),
-                "km": self._extract_int(v.find("km")),
-                "cor": self._extract_text(v.find("cor")),
-                "combustivel": self._extract_text(v.find("combustivel")),
-                "cambio": self._extract_text(v.find("cambio")),
-                "motor": self._extract_motor_from_version(versao_veiculo),
-                "portas": self._extract_int(v.find("portas")),
+                "ano": v.get("anomodelo"),
+                "ano_fabricacao": v.get("anofabricacao"),
+                "km": v.get("quilometragem") if v.get("quilometragem") else v.get("km"),
+                "cor": v.get("cor"),
+                "combustivel": v.get("combustivel"),
+                "cambio": v.get("cambio"),
+                "motor": self._extract_motor_from_version(v.get("versao")),
+                "portas": v.get("portas"),
                 "categoria": categoria_final,
                 "cilindrada": cilindrada_final,
-                "preco": self.converter_preco(self._extract_text(v.find("preco"))),
+                "preco": self.converter_preco(v.get("preco")),
                 "opcionais": opcionais_veiculo,
-                "fotos": self._extract_photos(v.find("fotos"))
+                "fotos": self._extract_photos(v)
             })
             parsed_vehicles.append(parsed)
         
         return parsed_vehicles
     
-    def _extract_text(self, element) -> str:
-        """Extrai texto de um elemento XML, lidando com CDATA e None"""
-        if element is None:
-            return ""
-        text = element.text or ""
-        # Remove <![CDATA[ ... ]]> se presente
-        text = re.sub(r'<!\[CDATA\[(.*?)\]\]>', r'\1', text, flags=re.DOTALL)
-        return text.strip()
-    
-    def _extract_int(self, element) -> int:
-        """Extrai inteiro de um elemento XML"""
-        text = self._extract_text(element)
-        try:
-            return int(text)
-        except ValueError:
-            return None
-    
-    def _parse_opcionais(self, opcionais_element) -> str:
+    def _parse_opcionais(self, opcionais: Any) -> str:
         """Processa os opcionais do DSAutoEstoque"""
-        if opcionais_element is None:
-            return ""
-        
-        opcional_elements = opcionais_element.findall("opcional")
-        if opcional_elements:
-            opcionais = [self._extract_text(opc) for opc in opcional_elements if self._extract_text(opc)]
-            return ", ".join(opcionais)
-        
-        # Se for vazio ou sem subelementos, retornar vazio
+        if isinstance(opcionais, dict) and "opcional" in opcionais:
+            opcional = opcionais["opcional"]
+            if isinstance(opcional, list):
+                return ", ".join(str(item) for item in opcional if item)
+            return str(opcional) if opcional else ""
+        elif isinstance(opcionais, list):
+            return ", ".join(str(item) for item in opcionais if item)
         return ""
     
     def _clean_version(self, modelo: str, versao: str) -> str:
@@ -125,14 +103,17 @@ class DSAutoEstoqueParser(BaseParser):
         words = versao.strip().split()
         return words[0] if words else None
     
-    def _extract_photos(self, fotos_element) -> List[str]:
+    def _extract_photos(self, v: Dict) -> List[str]:
         """Extrai fotos do veículo DSAutoEstoque"""
-        fotos = []
-        if fotos_element is not None:
-            foto_elements = fotos_element.findall("foto")
-            for foto in foto_elements:
-                url = self._extract_text(foto)
-                if url:
-                    # Remove query params se quiser, mas no sample não tem
-                    fotos.append(url)
-        return fotos
+        fotos = v.get("fotos")
+        if not fotos or not (fotos_foto := fotos.get("foto")):
+            return []
+        
+        if isinstance(fotos_foto, dict):
+            fotos_foto = [fotos_foto]
+        
+        return [
+            img["url"].split("?")[0] 
+            for img in fotos_foto 
+            if isinstance(img, dict) and "url" in img
+        ]
