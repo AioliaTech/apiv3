@@ -21,16 +21,16 @@ class DSAutoEstoqueParser(BaseParser):
         
         parsed_vehicles = []
         for v in veiculos:
-            modelo_veiculo = v.get("modelo")
-            versao_veiculo = v.get("versao")
+            modelo_veiculo = self._extract_text(v.get("modelo"))
+            versao_veiculo = self._extract_text(v.get("versao"))
             opcionais_veiculo = self._parse_opcionais(v.get("opcionais"))
             
             # Determina se é moto ou carro baseado em tipoveiculo
-            tipo_veiculo = v.get("tipoveiculo", "").lower()
+            tipo_veiculo = self._extract_text(v.get("tipoveiculo")).lower()
             is_moto = "moto" in tipo_veiculo or "motocicleta" in tipo_veiculo
             
             # Tenta extrair categoria de "carroceria", senão usa definir_categoria_veiculo
-            categoria_final = v.get("carroceria")
+            categoria_final = self._extract_text(v.get("carroceria"))
             if not categoria_final:
                 categoria_final = self.definir_categoria_veiculo(modelo_veiculo, opcionais_veiculo)
             
@@ -42,29 +42,46 @@ class DSAutoEstoqueParser(BaseParser):
                 cilindrada_final = None
             
             parsed = self.normalize_vehicle({
-                "id": v.get("id"),
-                "tipo": "moto" if is_moto else v.get("tipoveiculo"),
+                "id": self._extract_text(v.get("id")),
+                "tipo": "moto" if is_moto else self._extract_text(v.get("tipoveiculo")),
                 "titulo": None,
-                "versao": v.get('versao'),
-                "marca": v.get("marca"),
+                "versao": versao_veiculo,
+                "marca": self._extract_text(v.get("marca")),
                 "modelo": modelo_veiculo,
-                "ano": v.get("anomodelo"),
-                "ano_fabricacao": v.get("anofabricacao"),
-                "km": v.get("quilometragem") if v.get("quilometragem") else v.get("km"),
-                "cor": v.get("cor"),
-                "combustivel": v.get("combustivel"),
-                "cambio": v.get("cambio"),
-                "motor": self._extract_motor_from_version(v.get("versao")),
-                "portas": v.get("portas"),
+                "ano": self._extract_int(v.get("anomodelo")),
+                "ano_fabricacao": self._extract_int(v.get("anofabricacao")),
+                "km": self._extract_int(v.get("km") or v.get("quilometragem")),
+                "cor": self._extract_text(v.get("cor")),
+                "combustivel": self._extract_text(v.get("combustivel")),
+                "cambio": self._extract_text(v.get("cambio")),
+                "motor": self._extract_motor_from_version(versao_veiculo),
+                "portas": self._extract_int(v.get("portas")),
                 "categoria": categoria_final,
                 "cilindrada": cilindrada_final,
-                "preco": self.converter_preco(v.get("preco")),
+                "preco": self.converter_preco(self._extract_text(v.get("preco"))),
                 "opcionais": opcionais_veiculo,
                 "fotos": self._extract_photos(v)
             })
             parsed_vehicles.append(parsed)
         
         return parsed_vehicles
+    
+    def _extract_text(self, value: Any) -> str:
+        """Extrai texto de campos que podem ser string, dict ou None"""
+        if isinstance(value, str):
+            return value.strip()
+        if isinstance(value, dict):
+            # Tenta chaves comuns para texto em dicts XML-serializados
+            text = value.get("#text") or value.get("$") or value.get("value") or ""
+            return str(text).strip()
+        return str(value or "").strip()
+    
+    def _extract_int(self, value: Any) -> int:
+        """Extrai inteiro de campos que podem ser string, dict ou None"""
+        text = self._extract_text(value)
+        if text and text.isdigit():
+            return int(text)
+        return None
     
     def _parse_opcionais(self, opcionais: Any) -> str:
         """Processa os opcionais do DSAutoEstoque"""
