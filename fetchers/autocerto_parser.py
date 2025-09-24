@@ -1,33 +1,21 @@
 """
-Parser específico para DSAutoEstoque (dsautoestoque.com) - JSON
+Parser específico para Autocerto (autocerto.com)
 """
+
 from .base_parser import BaseParser
 from typing import Dict, List, Any
-import json
+import re
 
-class DSAutoEstoqueParser(BaseParser):
-    """Parser para dados JSON do DSAutoEstoque"""
+class AutocertoParser(BaseParser):
+    """Parser para dados do Autocerto"""
     
     def can_parse(self, data: Any, url: str) -> bool:
-        """Verifica se pode processar dados do DSAutoEstoque"""
-        return "dsautoestoque.com" in url.lower()
+        """Verifica se pode processar dados do Autocerto"""
+        return "autocerto.com" in url.lower()
     
     def parse(self, data: Any, url: str) -> List[Dict]:
-        """Processa dados JSON do DSAutoEstoque"""
-        # Se data for string JSON, parse primeiro
-        if isinstance(data, str):
-            data = json.loads(data)
-        
-        # Extrai lista de veículos do JSON
-        if "resultados" in data:
-            veiculos = data["resultados"]
-        elif "veiculos" in data:
-            veiculos = data["veiculos"]
-        elif isinstance(data, list):
-            veiculos = data
-        else:
-            veiculos = []
-        
+        """Processa dados do Autocerto"""
+        veiculos = data["estoque"]["veiculo"]
         if isinstance(veiculos, dict):
             veiculos = [veiculos]
         
@@ -35,7 +23,7 @@ class DSAutoEstoqueParser(BaseParser):
         for v in veiculos:
             modelo_veiculo = v.get("modelo")
             versao_veiculo = v.get("versao")
-            observacao_veiculo = v.get("observacao", "")
+            opcionais_veiculo = self._parse_opcionais(v.get("opcionais"))
             
             # Determina se é moto ou carro
             tipo_veiculo = v.get("tipoveiculo", "").lower()
@@ -46,35 +34,59 @@ class DSAutoEstoqueParser(BaseParser):
                     modelo_veiculo, versao_veiculo
                 )
             else:
-                categoria_final = self.definir_categoria_veiculo(modelo_veiculo, observacao_veiculo)
+                categoria_final = self.definir_categoria_veiculo(modelo_veiculo, opcionais_veiculo)
                 cilindrada_final = None
             
             parsed = self.normalize_vehicle({
-                "id": v.get("id"),
-                "tipo": "moto" if is_moto else "carro",
-                "zero_km": v.get("zerokm") == "S",
-                "placa": v.get("placa"),
+                "id": v.get("idveiculo"),
+                "tipo": "moto" if is_moto else v.get("tipoveiculo"),
                 "titulo": None,
-                "versao": versao_veiculo,
+                "versao": v.get('versao'),
                 "marca": v.get("marca"),
                 "modelo": modelo_veiculo,
                 "ano": v.get("anomodelo"),
-                "ano_fabricacao": v.get("anofabricacao"),
-                "km": v.get("km"),
+                "ano_fabricacao": None,
+                "km": v.get("quilometragem"),
                 "cor": v.get("cor"),
                 "combustivel": v.get("combustivel"),
                 "cambio": v.get("cambio"),
-                "motor": self._extract_motor_from_version(versao_veiculo),
-                "portas": v.get("portas"),
+                "motor": self._extract_motor_from_version(v.get("versao")),
+                "portas": v.get("numeroportas"),
                 "categoria": categoria_final,
                 "cilindrada": cilindrada_final,
                 "preco": self.converter_preco(v.get("preco")),
-                "opcionais": observacao_veiculo,
+                "opcionais": opcionais_veiculo,
                 "fotos": self._extract_photos(v)
             })
             parsed_vehicles.append(parsed)
         
         return parsed_vehicles
+    
+    def _parse_opcionais(self, opcionais: Any) -> str:
+        """Processa os opcionais do Autocerto"""
+        if isinstance(opcionais, dict) and "opcional" in opcionais:
+            opcional = opcionais["opcional"]
+            if isinstance(opcional, list):
+                return ", ".join(str(item) for item in opcional if item)
+            return str(opcional) if opcional else ""
+        return ""
+    
+    def _clean_version(self, modelo: str, versao: str) -> str:
+        """Limpa a versão removendo informações técnicas redundantes"""
+        if not versao:
+            return modelo.strip() if modelo else None
+        
+        # Concatena modelo + versão limpa
+        modelo_str = modelo.strip() if modelo else ""
+        versao_limpa = ' '.join(re.sub(
+            r'\b(\d\.\d|4x[0-4]|\d+v|diesel|flex|gasolina|manual|automático|4p)\b', 
+            '', versao, flags=re.IGNORECASE
+        ).split())
+        
+        if versao_limpa:
+            return f"{modelo_str} {versao_limpa}".strip()
+        else:
+            return modelo_str or None
     
     def _extract_motor_from_version(self, versao: str) -> str:
         """Extrai informações do motor da versão"""
@@ -86,18 +98,16 @@ class DSAutoEstoqueParser(BaseParser):
         return words[0] if words else None
     
     def _extract_photos(self, v: Dict) -> List[str]:
-        """Extrai fotos do veículo DSAutoEstoque"""
+        """Extrai fotos do veículo Autocerto"""
         fotos = v.get("fotos")
-        if not fotos:
+        if not fotos or not (fotos_foto := fotos.get("foto")):
             return []
         
-        if isinstance(fotos, list):
-            return [foto.split("?")[0] for foto in fotos if isinstance(foto, str)]
-        elif isinstance(fotos, dict) and "foto" in fotos:
-            fotos_foto = fotos["foto"]
-            if isinstance(fotos_foto, list):
-                return [foto.split("?")[0] for foto in fotos_foto if isinstance(foto, str)]
-            else:
-                return [fotos_foto.split("?")[0]] if isinstance(fotos_foto, str) else []
+        if isinstance(fotos_foto, dict):
+            fotos_foto = [fotos_foto]
         
-        return []
+        return [
+            img["url"].split("?")[0] 
+            for img in fotos_foto 
+            if isinstance(img, dict) and "url" in img
+        ]
