@@ -122,15 +122,26 @@ class DSAutoEstoqueParser(BaseParser):
     
     def _extract_photos(self, v: Dict) -> List[str]:
         """Extrai fotos do veículo DSAutoEstoque"""
-        fotos = v.get("fotos")
-        if not fotos or not (fotos_foto := fotos.get("foto")):
+        fotos_element = v.get("fotos")
+        if not fotos_element:
             return []
         
-        if isinstance(fotos_foto, dict):
-            fotos_foto = [fotos_foto]
+        # Assume fotos_element is dict with "foto" key
+        foto_elements = fotos_element.get("foto", [])
         
-        return [
-            img["url"].split("?")[0] 
-            for img in fotos_foto 
-            if isinstance(img, dict) and "url" in img
-        ]
+        if isinstance(foto_elements, (dict, str)):
+            # Single value
+            foto_elements = [foto_elements]
+        
+        urls = []
+        for foto in foto_elements:
+            if isinstance(foto, str):
+                # Directly the URL
+                urls.append(foto)
+            elif isinstance(foto, dict):
+                # Extract from dict (text or url key)
+                url = self._extract_text(foto) or foto.get("url", "")
+                urls.append(url)
+        
+        # Remove query params
+        return [url.split("?")[0] for url in urls if url]
