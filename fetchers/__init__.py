@@ -1,7 +1,6 @@
 """
 Fetchers package - Parsers individuais para cada fornecedor de dados de veículos
 """
-
 from .base_parser import BaseParser
 from .altimus_parser import AltimusParser
 from .autocerto_parser import AutocertoParser
@@ -12,7 +11,7 @@ from .revendapro_parser import RevendaproParser
 from .clickgarage_parser import ClickGarageParser
 from .simplesveiculo_parser import SimplesVeiculoParser
 from .boom_parser import BoomParser
-from .dsautoparser import DSAutoEstoqueParser
+from .dsautoparser import DSAutoEstoqueParser  # Nome correto do arquivo
 from .vitorioso_wordpress_parser import WordPressParser
 
 __all__ = [
@@ -25,6 +24,7 @@ __all__ = [
     'RevendaproParser',
     'ClickGarageParser',
     'SimplesVeiculoParser',
-    'DSAutoEstoqueParser',
-    'BoomParser'
+    'BoomParser',
+    'DSAutoEstoqueParser',  # Adicionado na lista __all__
+    'WordPressParser'  # Corrigido - estava faltando
 ]
