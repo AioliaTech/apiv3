@@ -16,6 +16,7 @@ from fetchers import (
     ClickGarageParser,
     SimplesVeiculoParser,
     BoomParser,
+    DSAutoEstoqueParser,
     WordPressParser
 )
 
@@ -38,6 +39,7 @@ class UnifiedVehicleFetcher:
             SimplesVeiculoParser(),
             RevendaproParser(),
             BoomParser(),
+            DSAutoEstoqueParser(),
             WordPressParser()
         ]
         print("[INFO] Sistema unificado iniciado com parsers modularizados")
