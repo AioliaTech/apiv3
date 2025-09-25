@@ -24,6 +24,7 @@ class AltimusParser(BaseParser):
             modelo_veiculo = v.get("modelo")
             versao_veiculo = v.get("versao")
             opcionais_veiculo = self._parse_opcionais(v.get("opcionais"))
+            combustivel_veiculo = v.get("combustivel")
             
             # Determina se é moto ou carro - CORREÇÃO PARA EVITAR ERRO DE None
             tipo_veiculo = v.get("tipo", "")
@@ -38,9 +39,18 @@ class AltimusParser(BaseParser):
                 categoria_final = self.definir_categoria_veiculo(modelo_veiculo, opcionais_veiculo)
                 cilindrada_final = None
             
+            # Determina o tipo final do veículo
+            tipo_final = self._determine_tipo(tipo_veiculo, is_moto)
+            
+            # NOVA REGRA: Se tipo for 'moto' ou 'eletrico' e combustível for 'Elétrico', categoria = "Scooter Eletrica"
+            if (tipo_final in ['moto', 'eletrico'] and 
+                combustivel_veiculo and 
+                str(combustivel_veiculo).lower() == 'elétrico'):
+                categoria_final = "Scooter Eletrica"
+            
             parsed = self.normalize_vehicle({
                 "id": v.get("id"),
-                "tipo": self._determine_tipo(tipo_veiculo, is_moto),
+                "tipo": tipo_final,
                 "titulo": None,
                 "versao": versao_veiculo,
                 "marca": v.get("marca"),
@@ -49,7 +59,7 @@ class AltimusParser(BaseParser):
                 "ano_fabricacao": v.get("anoFabricacao") or v.get("ano_fabricacao"),
                 "km": v.get("km"),
                 "cor": v.get("cor"),
-                "combustivel": v.get("combustivel"),
+                "combustivel": combustivel_veiculo,
                 "cambio": self._normalize_cambio(v.get("cambio")),
                 "motor": self._extract_motor_from_version(versao_veiculo),
                 "portas": v.get("portas"),
