@@ -840,10 +840,6 @@ def get_data(request: Request):
                             vehicle["fotos"] = []
                     else:
                         vehicle["fotos"] = []
-            if "opcionais" not in filters:
-                for vehicle in matched:
-                    if "opcionais" in vehicle:
-                        del vehicle["opcionais"]
             return JSONResponse(content={
                 "resultados": matched,
                 "total_encontrado": len(matched),
@@ -875,10 +871,6 @@ def get_data(request: Request):
                         vehicle["fotos"] = []
                 else:
                     vehicle["fotos"] = []
-        if "opcionais" not in filters:
-            for vehicle in sorted_vehicles:
-                if "opcionais" in vehicle:
-                    del vehicle["opcionais"]
         return JSONResponse(content={
             "resultados": sorted_vehicles,
             "total_encontrado": len(sorted_vehicles),
@@ -900,11 +892,6 @@ def get_data(request: Request):
                     vehicle["fotos"] = []
             else:
                 vehicle["fotos"] = []
-
-    if "opcionais" not in filters and result.vehicles:
-        for vehicle in result.vehicles:
-            if "opcionais" in vehicle:
-                del vehicle["opcionais"]
 
     response_data = {
         "resultados": result.vehicles,
