@@ -13,6 +13,7 @@ from .simplesveiculo_parser import SimplesVeiculoParser
 from .boom_parser import BoomParser
 from .dsautoparser import DSAutoEstoqueParser  # Nome correto do arquivo
 from .vitorioso_wordpress_parser import WordPressParser
+from .bndv_parser import BndvParser
 
 __all__ = [
     'BaseParser',
@@ -25,6 +26,7 @@ __all__ = [
     'ClickGarageParser',
     'SimplesVeiculoParser',
     'BoomParser',
-    'DSAutoEstoqueParser',  # Adicionado na lista __all__
+    'DSAutoEstoqueParser',
+    'BndvParser',# Adicionado na lista __all__
     'WordPressParser'  # Corrigido - estava faltando
 ]
