@@ -612,10 +612,11 @@ def lookup_model(request: Request):
                     "matched_key": key
                 })
         
-        # Busca fuzzy (novo)
+        # Busca fuzzy
         best_match = None
         best_score = 0
-        threshold = 96
+        best_key = None
+        threshold = 85
         
         for key, (cilindrada, categoria) in MAPEAMENTO_MOTOS.items():
             partial_score = fuzz.partial_ratio(normalized_model, key)
@@ -624,14 +625,12 @@ def lookup_model(request: Request):
             
             if max_score >= threshold and max_score > best_score:
                 best_score = max_score
+                best_key = key
                 best_match = {
-                    "modelo": modelo,
+                    "modelo": key,  # Retorna o modelo do mapping
                     "tipo": tipo,
                     "cilindrada": cilindrada,
-                    "categoria": categoria,
-                    "match_type": "fuzzy",
-                    "matched_key": key,
-                    "match_score": max_score
+                    "categoria": categoria
                 }
         
         if best_match:
@@ -680,9 +679,10 @@ def lookup_model(request: Request):
                     "matched_key": key
                 })
         
-        # Busca fuzzy (novo)
+        # Busca fuzzy
         best_match = None
         best_score = 0
+        best_key = None
         threshold = 85
         
         for key, categoria in MAPEAMENTO_CATEGORIAS.items():
@@ -692,13 +692,11 @@ def lookup_model(request: Request):
             
             if max_score >= threshold and max_score > best_score:
                 best_score = max_score
+                best_key = key
                 best_match = {
-                    "modelo": modelo,
+                    "modelo": key,  # Retorna o modelo do mapping
                     "tipo": tipo,
-                    "categoria": categoria,
-                    "match_type": "fuzzy",
-                    "matched_key": key,
-                    "match_score": max_score
+                    "categoria": categoria
                 }
         
         if best_match:
