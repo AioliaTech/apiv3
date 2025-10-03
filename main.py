@@ -612,6 +612,31 @@ def lookup_model(request: Request):
                     "matched_key": key
                 })
         
+        # Busca fuzzy (novo)
+        best_match = None
+        best_score = 0
+        threshold = 96
+        
+        for key, (cilindrada, categoria) in MAPEAMENTO_MOTOS.items():
+            partial_score = fuzz.partial_ratio(normalized_model, key)
+            ratio_score = fuzz.ratio(normalized_model, key)
+            max_score = max(partial_score, ratio_score)
+            
+            if max_score >= threshold and max_score > best_score:
+                best_score = max_score
+                best_match = {
+                    "modelo": modelo,
+                    "tipo": tipo,
+                    "cilindrada": cilindrada,
+                    "categoria": categoria,
+                    "match_type": "fuzzy",
+                    "matched_key": key,
+                    "match_score": max_score
+                }
+        
+        if best_match:
+            return JSONResponse(content=best_match)
+        
         return JSONResponse(content={
             "modelo": modelo,
             "tipo": tipo,
@@ -654,6 +679,30 @@ def lookup_model(request: Request):
                     "match_type": "substring",
                     "matched_key": key
                 })
+        
+        # Busca fuzzy (novo)
+        best_match = None
+        best_score = 0
+        threshold = 85
+        
+        for key, categoria in MAPEAMENTO_CATEGORIAS.items():
+            partial_score = fuzz.partial_ratio(normalized_model, key)
+            ratio_score = fuzz.ratio(normalized_model, key)
+            max_score = max(partial_score, ratio_score)
+            
+            if max_score >= threshold and max_score > best_score:
+                best_score = max_score
+                best_match = {
+                    "modelo": modelo,
+                    "tipo": tipo,
+                    "categoria": categoria,
+                    "match_type": "fuzzy",
+                    "matched_key": key,
+                    "match_score": max_score
+                }
+        
+        if best_match:
+            return JSONResponse(content=best_match)
         
         return JSONResponse(content={
             "modelo": modelo,
