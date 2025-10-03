@@ -52,7 +52,7 @@ class RevendamaisParser(BaseParser):
                 "cambio": v.get("GEAR"), 
                 "motor": v.get("MOTOR"),
                 "portas": v.get("DOORS"), 
-                "categoria": categoria_final or v.get("BODY_TYPE"),
+                "categoria": v.get("BODY_TYPE") or categoria_final,
                 "cilindrada": cilindrada_final, 
                 "preco": self.converter_preco(v.get("PRICE")),
                 "opcionais": opcionais_veiculo, 
