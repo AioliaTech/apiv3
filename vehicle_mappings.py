@@ -120,6 +120,8 @@ MAPEAMENTO_MOTOS = {
     
     # Scooter (transmissão automática, design step-through)
     "SH 300": (300, "scooter"),
+    "160 DLX ABS": (160, "scooter"),
+    "C 100": (100, "scooter"),
     "lead 110": (110, "scooter"),
     "biz 125": (125, "scooter"),
     "jet 50": (50, "scooter"),
@@ -150,9 +152,11 @@ MAPEAMENTO_MOTOS = {
     "burgman 125": (125, "scooter"),
     "burgman125": (125, "scooter"),  # Variação sem espaço
     "dafra citycom 300": (300, "scooter"),
+    "MAXSYM 400i": (400, "scooter"),
     "citycom": (300, "scooter"),
     
     # Trail/Offroad (dual-sport, suspensão robusta)
+    "NH 190": (190, "trail"),
     "nxr 150 bros": (150, "trail"),
     "shi 175": (150, "trail"),
     "nxr150 bros": (150, "trail"),  # Variação sem espaço
@@ -172,6 +176,7 @@ MAPEAMENTO_MOTOS = {
     "sahara300": (300, "trail"),  # Variação sem espaço
     "sahara 300 rally": (300, "trail"),
     "sahara300 rally": (300, "trail"),  # Variação sem espaço
+    "XR 250 TORNADO": (250, "trail"),
     "xr300l tornado": (300, "trail"),
     "xr 300l tornado": (300, "trail"),
     "crf 230f": (230, "offroad"),
@@ -339,6 +344,7 @@ MAPEAMENTO_MOTOS = {
     
     # Custom/Cruiser (posição relaxada, estética clássica)
     "FAT BOY": (1690, "custom"),
+    "MASTER RIDE 150": (150, "custom"),
     "NIGHTSTER SPECIAL": (975, "custom"),
     "iron 883": (883, "custom"),
     "v-rod": (1250, "custom"),
