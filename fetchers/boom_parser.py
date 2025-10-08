@@ -4,6 +4,7 @@ Parser genérico BoomParser - usado como fallback para estruturas não específi
 
 from .base_parser import BaseParser
 from typing import Dict, List, Any, Union
+import xml.etree.ElementTree as ET
 
 class BoomParser(BaseParser):
     """Parser genérico para estruturas variadas - usado como fallback"""
@@ -14,13 +15,18 @@ class BoomParser(BaseParser):
     
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados com estrutura genérica/variável"""
+        
+        # Se recebeu string XML, converte para dict
+        if isinstance(data, (str, bytes)):
+            data = self._parse_xml(data)
+        
         veiculos = []
         
         if isinstance(data, list):
             veiculos = self._flatten_list(data)
         elif isinstance(data, dict):
             # Tenta várias chaves possíveis para encontrar os veículos
-            for key in ['veiculos', 'vehicles', 'data', 'items', 'results', 'content']:
+            for key in ['veiculos', 'veiculo', 'vehicles', 'data', 'items', 'results', 'content']:
                 if key in data:
                     veiculos = self._flatten_list(data[key])
                     break
@@ -83,13 +89,58 @@ class BoomParser(BaseParser):
         
         return parsed_vehicles
     
+    def _parse_xml(self, xml_data: Union[str, bytes]) -> Dict:
+        """Converte XML em dicionário"""
+        try:
+            if isinstance(xml_data, bytes):
+                xml_data = xml_data.decode('utf-8')
+            
+            root = ET.fromstring(xml_data)
+            
+            # Converte o XML inteiro para dict
+            return self._element_to_dict(root)
+        except Exception as e:
+            print(f"Erro ao parsear XML: {e}")
+            return {}
+    
+    def _element_to_dict(self, element: ET.Element) -> Dict:
+        """Converte um elemento XML recursivamente em dicionário"""
+        result = {}
+        
+        # Processa atributos
+        if element.attrib:
+            result.update(element.attrib)
+        
+        # Processa filhos
+        children = list(element)
+        if children:
+            child_dict = {}
+            for child in children:
+                child_data = self._element_to_dict(child)
+                
+                # Se já existe essa chave, transforma em lista
+                if child.tag in child_dict:
+                    if not isinstance(child_dict[child.tag], list):
+                        child_dict[child.tag] = [child_dict[child.tag]]
+                    child_dict[child.tag].append(child_data)
+                else:
+                    child_dict[child.tag] = child_data
+            
+            result.update(child_dict)
+        
+        # Se não tem filhos, pega o texto
+        elif element.text and element.text.strip():
+            return element.text.strip()
+        
+        return result if result else (element.text.strip() if element.text else "")
+    
     def _safe_get(self, data: Dict, keys: Union[str, List[str]], default: Any = None) -> Any:
         """Busca valor em múltiplas chaves possíveis"""
         if isinstance(keys, str):
             keys = [keys]
         
         for key in keys:
-            if isinstance(data, dict) and key in data and data[key] is not None:
+            if isinstance(data, dict) and key in data and data[key] is not None and data[key] != "":
                 return data[key]
         return default
     
@@ -113,7 +164,7 @@ class BoomParser(BaseParser):
     
     def _looks_like_vehicle(self, data: Dict) -> bool:
         """Verifica se um dict parece conter dados de veículo"""
-        vehicle_indicators = ['modelo', 'model', 'marca', 'brand', 'preco', 'price', 'ano', 'year']
+        vehicle_indicators = ['modelo', 'model', 'marca', 'brand', 'preco', 'price', 'ano', 'year', 'ano_mod', 'ano_fab']
         return any(field in data for field in vehicle_indicators)
     
     def _parse_opcionais(self, opcionais: Any) -> str:
@@ -137,7 +188,11 @@ class BoomParser(BaseParser):
     
     def _parse_fotos(self, v: Dict) -> List[str]:
         """Processa fotos de formato variável"""
-        fotos_data = self._safe_get(v, ["galeria", "fotos", "photos", "images", "gallery", "IMAGES"], [])
+        fotos_data = self._safe_get(v, ["galeria", "fotos", "photos", "images", "gallery", "IMAGES"], {})
+        
+        # Se galeria é um dict com 'item', pega os items
+        if isinstance(fotos_data, dict) and 'item' in fotos_data:
+            fotos_data = fotos_data['item']
         
         if not isinstance(fotos_data, list):
             fotos_data = [fotos_data] if fotos_data else []
