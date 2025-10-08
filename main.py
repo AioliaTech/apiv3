@@ -562,6 +562,51 @@ def lookup_model(request: Request):
         
         return JSONResponse(content={"modelo": modelo, "tipo": tipo, "categoria": None, "message": "Modelo de carro não encontrado nos mapeamentos"})
 
+# MOVER ESTA FUNÇÃO PARA ANTES DO ENDPOINT /list
+def _format_vehicle(vehicle: Dict) -> str:
+    tipo = vehicle.get("tipo", "").lower()
+    
+    def safe_value(value):
+        if value is None or value == "":
+            return ""
+        return str(value)
+    
+    opcionais_str = vehicle.get("opcionais", "")
+    codigos_opcionais = opcionais_para_codigos(opcionais_str)
+    codigos_formatados = f"[{','.join(map(str, codigos_opcionais))}]" if codigos_opcionais else "[]"
+    
+    if "moto" in tipo:
+        return ",".join([
+            safe_value(vehicle.get("id")),
+            safe_value(vehicle.get("tipo")),
+            safe_value(vehicle.get("marca")),
+            safe_value(vehicle.get("modelo")),
+            safe_value(vehicle.get("versao")),
+            safe_value(vehicle.get("cor")),
+            safe_value(vehicle.get("ano")),
+            safe_value(vehicle.get("km")),
+            safe_value(vehicle.get("combustivel")),
+            safe_value(vehicle.get("cilindrada")),
+            safe_value(vehicle.get("preco"))
+        ])
+    else:
+        return ",".join([
+            safe_value(vehicle.get("id")),
+            safe_value(vehicle.get("tipo")),
+            safe_value(vehicle.get("marca")),
+            safe_value(vehicle.get("modelo")),
+            safe_value(vehicle.get("versao")),
+            safe_value(vehicle.get("cor")),
+            safe_value(vehicle.get("ano")),
+            safe_value(vehicle.get("km")),
+            safe_value(vehicle.get("combustivel")),
+            safe_value(vehicle.get("cambio")),
+            safe_value(vehicle.get("motor")),
+            safe_value(vehicle.get("portas")),
+            safe_value(vehicle.get("preco")),
+            codigos_formatados
+        ])
+
 @app.get("/list")
 def list_vehicles(request: Request):
     if not os.path.exists("data.json"):
