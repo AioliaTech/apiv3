@@ -62,3 +62,33 @@ class BoomParser(BaseParser):
             opcionais_str = ""
             opcional = v.get('opcional')
             if opcional and isinstance(opcional, dict) and 'item' in opcional:
+                items = opcional['item']
+                if isinstance(items, list):
+                    opcionais_str = ", ".join(str(item) for item in items if item)
+                elif items:
+                    opcionais_str = str(items)
+            
+            parsed = self.normalize_vehicle({
+                "id": v.get('id'),
+                "tipo": tipo_final,
+                "titulo": v.get('titulo'),
+                "versao": None,
+                "marca": v.get('marca'),
+                "modelo": v.get('modelo'),
+                "ano": v.get('ano_mod'),
+                "ano_fabricacao": v.get('ano_fab'),
+                "km": v.get('km'),
+                "cor": v.get('cor'),
+                "combustivel": v.get('combustivel'),
+                "cambio": v.get('cambio'),
+                "motor": v.get('motor'),
+                "portas": v.get('portas'),
+                "categoria": categoria_final,
+                "cilindrada": cilindrada_final,
+                "preco": self.converter_preco(v.get('valor')),
+                "opcionais": opcionais_str,
+                "fotos": fotos
+            })
+            parsed_vehicles.append(parsed)
+        
+        return parsed_vehicles
