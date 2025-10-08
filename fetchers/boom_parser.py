@@ -103,45 +103,48 @@ class BoomParser(BaseParser):
             print(f"Erro ao parsear XML: {e}")
             return {}
     
-    def _element_to_dict(self, element: ET.Element) -> Dict:
+    def _element_to_dict(self, element: ET.Element) -> Any:
         """Converte um elemento XML recursivamente em dicionário"""
-        result = {}
-        
-        # Processa atributos
-        if element.attrib:
-            result.update(element.attrib)
-        
         # Processa filhos
         children = list(element)
-        if children:
-            child_dict = {}
-            for child in children:
-                child_data = self._element_to_dict(child)
-                
-                # Se já existe essa chave, transforma em lista
-                if child.tag in child_dict:
-                    if not isinstance(child_dict[child.tag], list):
-                        child_dict[child.tag] = [child_dict[child.tag]]
-                    child_dict[child.tag].append(child_data)
-                else:
-                    child_dict[child.tag] = child_data
+        
+        if not children:
+            # Elemento folha - retorna o texto ou None se vazio
+            text = element.text
+            if text is not None:
+                text = text.strip()
+                return text if text else None
+            return None
+        
+        # Tem filhos - processa recursivamente
+        result = {}
+        for child in children:
+            child_data = self._element_to_dict(child)
             
-            result.update(child_dict)
+            # Se já existe essa chave, transforma em lista
+            if child.tag in result:
+                if not isinstance(result[child.tag], list):
+                    result[child.tag] = [result[child.tag]]
+                result[child.tag].append(child_data)
+            else:
+                result[child.tag] = child_data
         
-        # Se não tem filhos, pega o texto
-        elif element.text and element.text.strip():
-            return element.text.strip()
-        
-        return result if result else (element.text.strip() if element.text else "")
+        return result
     
     def _safe_get(self, data: Dict, keys: Union[str, List[str]], default: Any = None) -> Any:
         """Busca valor em múltiplas chaves possíveis"""
+        if not isinstance(data, dict):
+            return default
+            
         if isinstance(keys, str):
             keys = [keys]
         
         for key in keys:
-            if isinstance(data, dict) and key in data and data[key] is not None and data[key] != "":
-                return data[key]
+            if key in data:
+                value = data[key]
+                # Retorna apenas se não for None e não for string vazia
+                if value is not None and value != "":
+                    return value
         return default
     
     def _flatten_list(self, data: Any) -> List[Dict]:
@@ -188,7 +191,13 @@ class BoomParser(BaseParser):
     
     def _parse_fotos(self, v: Dict) -> List[str]:
         """Processa fotos de formato variável"""
-        fotos_data = self._safe_get(v, ["galeria", "fotos", "photos", "images", "gallery", "IMAGES"], {})
+        if not isinstance(v, dict):
+            return []
+            
+        fotos_data = self._safe_get(v, ["galeria", "fotos", "photos", "images", "gallery", "IMAGES"])
+        
+        if not fotos_data:
+            return []
         
         # Se galeria é um dict com 'item', pega os items
         if isinstance(fotos_data, dict) and 'item' in fotos_data:
@@ -199,7 +208,7 @@ class BoomParser(BaseParser):
         
         result = []
         for foto in fotos_data:
-            if isinstance(foto, str):
+            if isinstance(foto, str) and foto:
                 result.append(foto)
             elif isinstance(foto, dict):
                 url = self._safe_get(foto, ["url", "URL", "src", "IMAGE_URL", "path"])
