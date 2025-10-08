@@ -26,7 +26,7 @@ class BoomParser(BaseParser):
             veiculos = self._flatten_list(data)
         elif isinstance(data, dict):
             # Tenta várias chaves possíveis para encontrar os veículos
-            for key in ['veiculos', 'veiculo', 'vehicles', 'data', 'items', 'results', 'content']:
+            for key in ['veiculo', 'veiculos', 'vehicles', 'data', 'items', 'results', 'content']:
                 if key in data:
                     veiculos = self._flatten_list(data[key])
                     break
@@ -96,8 +96,6 @@ class BoomParser(BaseParser):
                 xml_data = xml_data.decode('utf-8')
             
             root = ET.fromstring(xml_data)
-            
-            # Converte o XML inteiro para dict
             return self._element_to_dict(root)
         except Exception as e:
             print(f"Erro ao parsear XML: {e}")
@@ -105,24 +103,23 @@ class BoomParser(BaseParser):
     
     def _element_to_dict(self, element: ET.Element) -> Any:
         """Converte um elemento XML recursivamente em dicionário"""
-        # Processa filhos
         children = list(element)
         
         if not children:
-            # Elemento folha - retorna o texto ou None se vazio
+            # Elemento folha
             text = element.text
             if text is not None:
                 text = text.strip()
                 return text if text else None
             return None
         
-        # Tem filhos - processa recursivamente
+        # Tem filhos
         result = {}
         for child in children:
             child_data = self._element_to_dict(child)
             
-            # Se já existe essa chave, transforma em lista
             if child.tag in result:
+                # Já existe - transforma em lista
                 if not isinstance(result[child.tag], list):
                     result[child.tag] = [result[child.tag]]
                 result[child.tag].append(child_data)
@@ -142,7 +139,6 @@ class BoomParser(BaseParser):
         for key in keys:
             if key in data:
                 value = data[key]
-                # Retorna apenas se não for None e não for string vazia
                 if value is not None and value != "":
                     return value
         return default
@@ -176,7 +172,6 @@ class BoomParser(BaseParser):
             return ""
         
         if isinstance(opcionais, list):
-            # Se é lista de dicts com estrutura
             if all(isinstance(i, dict) for i in opcionais):
                 names = []
                 for item in opcionais:
@@ -184,7 +179,6 @@ class BoomParser(BaseParser):
                     if name:
                         names.append(name)
                 return ", ".join(names)
-            # Se é lista simples
             return ", ".join(str(item) for item in opcionais if item)
         
         return str(opcionais)
