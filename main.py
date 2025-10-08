@@ -597,57 +597,30 @@ def list_vehicles(request: Request):
         formatted_vehicle = _format_vehicle(vehicle)
         categorized_vehicles[categoria].append(formatted_vehicle)
 
-    result = {}
+    # ADICIONAR ESTAS LINHAS AQUI:
+    instruction_text = (
+        "### HOW TO READ THE 'SearchStock' JSON (CRUCIAL — read each line carefully)\n"
+        "- For motorcycles (if the second value in the JSON is 'moto'):\n"
+        "ID code, type (moto), brand, model, version, color, year, mileage, fuel, engine capacity, price\n"
+        "- For cars (if the second value in the JSON is 'carro'):\n"
+        "ID code, type (carro), brand, model, version, color, year, mileage, fuel, transmission, engine, doors, price, [optionals]\n\n"
+        "- For the optionals in cars, some numbers can show up, there are the means of each number:\n"
+        "1 - air conditioning\n"
+        "2 - airbag\n"
+        "3 - electric windows\n"
+        "4 - abs brakes\n"
+        "5 - direção hidráulica\n"
+        "6 - electric steering"
+    )
+    
+    result = {"instruction": instruction_text}
+    
     for categoria in sorted(categorized_vehicles.keys()):
         result[categoria] = categorized_vehicles[categoria]
     if nao_mapeados:
         result["NÃO MAPEADOS"] = nao_mapeados
 
     return JSONResponse(content=result)
-
-def _format_vehicle(vehicle: Dict) -> str:
-    tipo = vehicle.get("tipo", "").lower()
-    
-    def safe_value(value):
-        if value is None or value == "":
-            return ""
-        return str(value)
-    
-    opcionais_str = vehicle.get("opcionais", "")
-    codigos_opcionais = opcionais_para_codigos(opcionais_str)
-    codigos_formatados = f"[{','.join(map(str, codigos_opcionais))}]" if codigos_opcionais else "[]"
-    
-    if "moto" in tipo:
-        return ",".join([
-            safe_value(vehicle.get("id")),
-            safe_value(vehicle.get("tipo")),
-            safe_value(vehicle.get("marca")),
-            safe_value(vehicle.get("modelo")),
-            safe_value(vehicle.get("versao")),
-            safe_value(vehicle.get("cor")),
-            safe_value(vehicle.get("ano")),
-            safe_value(vehicle.get("km")),
-            safe_value(vehicle.get("combustivel")),
-            safe_value(vehicle.get("cilindrada")),
-            safe_value(vehicle.get("preco"))
-        ])
-    else:
-        return ",".join([
-            safe_value(vehicle.get("id")),
-            safe_value(vehicle.get("tipo")),
-            safe_value(vehicle.get("marca")),
-            safe_value(vehicle.get("modelo")),
-            safe_value(vehicle.get("versao")),
-            safe_value(vehicle.get("cor")),
-            safe_value(vehicle.get("ano")),
-            safe_value(vehicle.get("km")),
-            safe_value(vehicle.get("combustivel")),
-            safe_value(vehicle.get("cambio")),
-            safe_value(vehicle.get("motor")),
-            safe_value(vehicle.get("portas")),
-            safe_value(vehicle.get("preco")),
-            codigos_formatados
-        ])
 
 def _collect_multi_params(qp: Any) -> Dict[str, str]:
     out: Dict[str, List[str]] = {}
