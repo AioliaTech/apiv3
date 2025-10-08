@@ -649,7 +649,7 @@ def list_vehicles(request: Request):
         "ID code, type (moto), brand, model, version, color, year, mileage, fuel, engine capacity, price\n"
         "- For cars (if the second value in the JSON is 'carro'):\n"
         "ID code, type (carro), brand, model, version, color, year, mileage, fuel, transmission, engine, doors, price, [optionals]\n\n"
-        "- For the optionals in cars, some numbers can show up, there are the means of each number:\n"
+        "- For the optionals in cars, some numbers can show up. There are the means of each number(If the optional our number isnt present, means that the optional is inexistent in this vehicle):\n"
         "1 - air conditioning\n"
         "2 - airbag\n"
         "3 - electric windows\n"
