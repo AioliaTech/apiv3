@@ -22,68 +22,64 @@ class BoomParser(BaseParser):
         
         veiculos = []
         
-        if isinstance(data, list):
-            veiculos = self._flatten_list(data)
-        elif isinstance(data, dict):
-            # Tenta várias chaves possíveis para encontrar os veículos
-            for key in ['veiculo', 'veiculos', 'vehicles', 'data', 'items', 'results', 'content']:
-                if key in data:
-                    veiculos = self._flatten_list(data[key])
-                    break
-            
-            # Se não encontrou e o próprio dict parece ser um veículo
-            if not veiculos and self._looks_like_vehicle(data):
-                veiculos = [data]
+        if isinstance(data, dict) and 'veiculo' in data:
+            veiculo_data = data['veiculo']
+            if isinstance(veiculo_data, list):
+                veiculos = veiculo_data
+            else:
+                veiculos = [veiculo_data]
         
         parsed_vehicles = []
         for v in veiculos:
             if not isinstance(v, dict):
                 continue
             
-            modelo_veiculo = self._safe_get(v, ["modelo", "model", "nome", "MODEL"])
-            versao_veiculo = self._safe_get(v, ["versao", "version", "variant", "VERSION"])
-            opcionais_veiculo = self._parse_opcionais(
-                self._safe_get(v, ["opcionais", "options", "extras", "features", "FEATURES"])
-            )
+            modelo_veiculo = v.get('modelo')
+            tipo_veiculo = v.get('tipo', 'carro')
             
-            # Determina se é moto ou carro baseado em campos disponíveis
-            tipo_veiculo = self._safe_get(v, ["tipo", "type", "categoria_veiculo", "CATEGORY", "vehicle_type"]) or ""
-            is_moto = any(termo in str(tipo_veiculo).lower() for termo in ["moto", "motocicleta", "motorcycle", "bike"])
+            # Verifica se é moto
+            is_moto = 'moto' in str(tipo_veiculo).lower()
             
             if is_moto:
                 cilindrada_final, categoria_final = self.inferir_cilindrada_e_categoria_moto(
-                    modelo_veiculo, versao_veiculo
+                    modelo_veiculo, None
                 )
                 tipo_final = "moto"
             else:
-                categoria_final = self.definir_categoria_veiculo(modelo_veiculo, opcionais_veiculo)
-                cilindrada_final = (
-                    self._safe_get(v, ["cilindrada", "displacement", "engine_size"])
-                )
-                tipo_final = tipo_veiculo or "carro"
+                categoria_final = self.definir_categoria_veiculo(modelo_veiculo, "")
+                cilindrada_final = None
+                tipo_final = tipo_veiculo
+            
+            # Processa fotos da galeria
+            fotos = []
+            galeria = v.get('galeria')
+            if galeria and isinstance(galeria, dict) and 'item' in galeria:
+                items = galeria['item']
+                if isinstance(items, list):
+                    fotos = [item for item in items if item]
+                elif items:
+                    fotos = [items]
             
             parsed = self.normalize_vehicle({
-                "id": self._safe_get(v, ["id", "ID", "codigo", "cod"]),
+                "id": v.get('id'),
                 "tipo": tipo_final,
-                "titulo": self._safe_get(v, ["titulo", "title", "TITLE"]),
-                "versao": versao_veiculo,
-                "marca": self._safe_get(v, ["marca", "brand", "fabricante", "MAKE"]),
-                "modelo": modelo_veiculo,
-                "ano": self._safe_get(v, ["ano_mod", "anoModelo", "ano", "year_model", "ano_modelo", "YEAR"]),
-                "ano_fabricacao": self._safe_get(v, ["ano_fab", "anoFabricacao", "ano_fabricacao", "year_manufacture", "FABRIC_YEAR"]),
-                "km": self._safe_get(v, ["km", "quilometragem", "mileage", "kilometers", "MILEAGE"]),
-                "cor": self._safe_get(v, ["cor", "color", "colour", "COLOR"]),
-                "combustivel": self._safe_get(v, ["combustivel", "fuel", "fuel_type", "FUEL"]),
-                "cambio": self._safe_get(v, ["cambio", "transmission", "gear", "GEAR"]),
-                "motor": self._safe_get(v, ["motor", "engine", "motorization", "MOTOR"]),
-                "portas": self._safe_get(v, ["portas", "doors", "num_doors", "DOORS"]),
+                "titulo": v.get('titulo'),
+                "versao": None,
+                "marca": v.get('marca'),
+                "modelo": v.get('modelo'),
+                "ano": v.get('ano_mod'),
+                "ano_fabricacao": v.get('ano_fab'),
+                "km": v.get('km'),
+                "cor": v.get('cor'),
+                "combustivel": v.get('combustivel'),
+                "cambio": v.get('cambio'),
+                "motor": v.get('motor'),
+                "portas": v.get('portas'),
                 "categoria": categoria_final,
                 "cilindrada": cilindrada_final,
-                "preco": self.converter_preco(
-                    self._safe_get(v, ["valor", "valorVenda", "preco", "price", "value", "PRICE"])
-                ),
-                "opcionais": opcionais_veiculo,
-                "fotos": self._parse_fotos(v)
+                "preco": self.converter_preco(v.get('valor')),
+                "opcionais": "",
+                "fotos": fotos
             })
             parsed_vehicles.append(parsed)
         
@@ -125,88 +121,5 @@ class BoomParser(BaseParser):
                 result[child.tag].append(child_data)
             else:
                 result[child.tag] = child_data
-        
-        return result
-    
-    def _safe_get(self, data: Dict, keys: Union[str, List[str]], default: Any = None) -> Any:
-        """Busca valor em múltiplas chaves possíveis"""
-        if not isinstance(data, dict):
-            return default
-            
-        if isinstance(keys, str):
-            keys = [keys]
-        
-        for key in keys:
-            if key in data:
-                value = data[key]
-                if value is not None and value != "":
-                    return value
-        return default
-    
-    def _flatten_list(self, data: Any) -> List[Dict]:
-        """Achata listas aninhadas para encontrar veículos"""
-        if not data:
-            return []
-        
-        if isinstance(data, list):
-            result = []
-            for item in data:
-                if isinstance(item, dict):
-                    result.append(item)
-                elif isinstance(item, list):
-                    result.extend(self._flatten_list(item))
-            return result
-        elif isinstance(data, dict):
-            return [data]
-        
-        return []
-    
-    def _looks_like_vehicle(self, data: Dict) -> bool:
-        """Verifica se um dict parece conter dados de veículo"""
-        vehicle_indicators = ['modelo', 'model', 'marca', 'brand', 'preco', 'price', 'ano', 'year', 'ano_mod', 'ano_fab']
-        return any(field in data for field in vehicle_indicators)
-    
-    def _parse_opcionais(self, opcionais: Any) -> str:
-        """Processa opcionais de formato variável"""
-        if not opcionais:
-            return ""
-        
-        if isinstance(opcionais, list):
-            if all(isinstance(i, dict) for i in opcionais):
-                names = []
-                for item in opcionais:
-                    name = self._safe_get(item, ["nome", "name", "descricao", "description", "FEATURE"])
-                    if name:
-                        names.append(name)
-                return ", ".join(names)
-            return ", ".join(str(item) for item in opcionais if item)
-        
-        return str(opcionais)
-    
-    def _parse_fotos(self, v: Dict) -> List[str]:
-        """Processa fotos de formato variável"""
-        if not isinstance(v, dict):
-            return []
-            
-        fotos_data = self._safe_get(v, ["galeria", "fotos", "photos", "images", "gallery", "IMAGES"])
-        
-        if not fotos_data:
-            return []
-        
-        # Se galeria é um dict com 'item', pega os items
-        if isinstance(fotos_data, dict) and 'item' in fotos_data:
-            fotos_data = fotos_data['item']
-        
-        if not isinstance(fotos_data, list):
-            fotos_data = [fotos_data] if fotos_data else []
-        
-        result = []
-        for foto in fotos_data:
-            if isinstance(foto, str) and foto:
-                result.append(foto)
-            elif isinstance(foto, dict):
-                url = self._safe_get(foto, ["url", "URL", "src", "IMAGE_URL", "path"])
-                if url:
-                    result.append(url)
         
         return result
