@@ -9,8 +9,10 @@ class RevendamaisParser(BaseParser):
     """Parser para dados do Revendamais"""
     
     def can_parse(self, data: Any, url: str) -> bool:
-        """Verifica se pode processar dados do Revendamais"""
-        return "revendamais.com.br" in url.lower()
+    """Verifica se pode processar dados do Revendamais ou Hey Veículos"""
+        url = url.lower()
+        return "revendamais.com.br" in url or "heyveiculos" in url
+
 
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados do Revendamais"""
