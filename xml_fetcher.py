@@ -43,6 +43,7 @@ class UnifiedVehicleFetcher:
             BoomParser(),
             DSAutoEstoqueParser(),
             BndvParser(),
+            RevendaiParser(),
             WordPressParser()
         ]
         print("[INFO] Sistema unificado iniciado com parsers modularizados")
