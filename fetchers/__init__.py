@@ -14,7 +14,7 @@ from .boom_parser import BoomParser
 from .dsautoparser import DSAutoEstoqueParser  # Nome correto do arquivo
 from .vitorioso_wordpress_parser import WordPressParser
 from .bndv_parser import BndvParser
-from .revendai_parser. import RevendaiParser
+from .revendai_parser import RevendaiParser
 
 __all__ = [
     'RevendaiParser',
