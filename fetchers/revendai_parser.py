@@ -11,7 +11,7 @@ class RevendaiParser(BaseParser):
     def can_parse(self, data: Any, url: str) -> bool:
         """Verifica se pode processar dados do Revendai"""
         url = url.lower()
-        return "revendai.com.br" in url
+        return "integrador.revendai" in url
     
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados do Revendai"""
