@@ -18,6 +18,7 @@ from fetchers import (
     BoomParser,
     DSAutoEstoqueParser,
     BndvParser,
+    RevendaiParser,
     WordPressParser
 )
 
