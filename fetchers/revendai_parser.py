@@ -46,6 +46,7 @@ class RevendaiParser(BaseParser):
                 "versao": v.get("versao"),
                 "marca": v.get("marca"),
                 "modelo": modelo_veiculo,
+                "modelo": v.get("observacao"),
                 "ano": v.get("ano"),
                 "ano_fabricacao": v.get("ano_fabricacao"),
                 "km": v.get("km"),
