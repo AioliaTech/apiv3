@@ -38,6 +38,7 @@ class BaseParser(ABC):
             "versao": vehicle.get("versao"), 
             "marca": vehicle.get("marca"), 
             "modelo": vehicle.get("modelo"),
+            "observacao": vehicle.get("observacao"),
             "ano": vehicle.get("ano"), 
             "ano_fabricacao": vehicle.get("ano_fabricacao"), 
             "km": vehicle.get("km"),
