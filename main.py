@@ -715,6 +715,7 @@ def get_data(request: Request):
         "categoria": query_params.get("categoria"),
         "cambio": query_params.get("cambio"),
         "opcionais": query_params.get("opcionais"),
+        "observacao": query_params.get("observacao"),
         "marca": query_params.get("marca"),
         "cor": query_params.get("cor"),
         "combustivel": query_params.get("combustivel"),
