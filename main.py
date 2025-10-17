@@ -27,7 +27,8 @@ OPCIONAIS_MAP = {
     3: ["vidros eletricos", "vidros elétricos", "vidro eletrico", "vidro elétrico", "vidros eletrico"],
     4: ["abs"],
     5: ["direcao hidraulica", "direção hidráulica", "direcao hidraulica", "dir hidraulica", "dir. hidraulica"],
-    6: ["direcao eletrica", "direção elétrica", "direcao eletrica", "dir eletrica", "dir. eletrica"]
+    6: ["direcao eletrica", "direção elétrica", "direcao eletrica", "dir eletrica", "dir. eletrica"],
+    7: ["7 lugar", "7 lugares", "sete lugar", "sete lugares"]
 }
 
 def normalizar_opcional(texto: str) -> str:
@@ -644,18 +645,19 @@ def list_vehicles(request: Request):
 
     # ADICIONAR ESTAS LINHAS AQUI:
     instruction_text = (
-        "### HOW TO READ THE 'SearchStock' JSON (CRUCIAL — read each line carefully)\n"
-        "- For motorcycles (if the second value in the JSON is 'moto'):\n"
-        "ID code, type (moto), brand, model, version, color, year, mileage, fuel, engine capacity, price\n"
-        "- For cars (if the second value in the JSON is 'carro'):\n"
-        "ID code, type (carro), brand, model, version, color, year, mileage, fuel, transmission, engine, doors, price, [optionals]\n\n"
-        "- For the optionals in cars, some numbers can show up. There are the means of each number(If the optional our number isnt present, means that the optional is inexistent in this vehicle):\n"
-        "1 - air conditioning\n"
+        "### COMO LER O JSON de 'BuscaEstoque' (CRUCIAL — leia cada linha com atenção)\n"
+        "- Para motocicletas (se o segundo valor no JSON for 'moto'):\n"
+        "Código ID, tipo (moto), marca, modelo, versão, cor, ano, quilometragem, combustível, cilindrada, preço\n"
+        "- Para carros (se o segundo valor no JSON for 'carro'):\n"
+        "Código ID, tipo (carro), marca, modelo, versão, cor, ano, quilometragem, combustível, câmbio, motor, portas, preço, [opcionais]\n\n"
+        "- Para os opcionais dos carros, alguns números podem aparecer. Aqui está o significado de cada número (se o número ou o opcional não estiver presente, significa que o veículo não possui esse item):\n"
+        "1 - ar-condicionado\n"
         "2 - airbag\n"
-        "3 - electric windows\n"
-        "4 - abs brakes\n"
+        "3 - vidros elétricos\n"
+        "4 - freios ABS\n"
         "5 - direção hidráulica\n"
-        "6 - electric steering"
+        "6 - direção elétrica\n"
+        "7 - sete lugares\n"
     )
     
     result = {"instruction": instruction_text}
