@@ -10,20 +10,36 @@ class RevendaiParser(BaseParser):
     
     def can_parse(self, data: Any, url: str) -> bool:
         """Verifica se pode processar dados do Revendai"""
+        # Proteção contra url None ou vazia
+        if not url:
+            return False
+        
         url = url.lower()
         return "integrador.revendai" in url
     
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados do Revendai"""
+        # Validação de dados
+        if not data or not isinstance(data, dict):
+            return []
+        
         veiculos = data.get("veiculos", [])
+        
+        # Validação de veículos
+        if not veiculos or not isinstance(veiculos, list):
+            return []
         
         parsed_vehicles = []
         for v in veiculos:
+            # Validação de cada veículo
+            if not isinstance(v, dict):
+                continue
+                
             modelo_veiculo = v.get("modelo")
             versao_veiculo = v.get("versao")
             opcionais_veiculo = v.get("opcionais") or ""
             
-            tipo_veiculo = v.get("tipo", "").lower()
+            tipo_veiculo = (v.get("tipo") or "").lower()
             is_moto = tipo_veiculo == "moto" or "motocicleta" in tipo_veiculo
             
             if is_moto:
@@ -37,13 +53,13 @@ class RevendaiParser(BaseParser):
                 tipo_final = tipo_veiculo
             
             id_original = v.get("id", "")
-            numeros = re.findall(r'\d', id_original)
+            numeros = re.findall(r'\d', str(id_original))  # Converte para string por segurança
             id_final = ''.join(numeros[:5]) if len(numeros) >= 5 else ''.join(numeros)
             
             parsed = self.normalize_vehicle({
                 "id": id_final,
                 "tipo": tipo_final,
-                "versao": v.get("versao"),
+                "versao": versao_veiculo,
                 "marca": v.get("marca"),
                 "modelo": modelo_veiculo,
                 "observacao": v.get("observacao"),
