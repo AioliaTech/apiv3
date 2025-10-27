@@ -3,7 +3,16 @@ from typing import Dict, List, Any
 import re
 
 class ComautoParser1(BaseParser):
-    def can_parse(self, data: Any, url: str) -> bool: return isinstance(data, dict) and "veiculos" in data
+    """Parser para dados do Revendai"""
+    
+    def can_parse(self, data: Any, url: str) -> bool:
+        """Verifica se pode processar dados do Revendai"""
+        # Proteção contra url None ou vazia
+        if not url:
+            return False
+        
+        url = url.lower()
+        return "s3.agsistema.net" in url
     
     def parse(self, data: Any, url: str) -> List[Dict]:
         veiculos = data.get("veiculos", [])
@@ -48,21 +57,17 @@ class ComautoParser1(BaseParser):
         if isinstance(opcionais, list): return ", ".join(str(item) for item in opcionais if item)
         return str(opcionais) if opcionais else ""
 
-class MotorLeadsParser(BaseParser):
-    """Parser para estrutura MotorLeads (XML_URL_2 e XML_URL_3)"""
+class ComautoParser2(BaseParser):
+    """Parser para dados do Revendai"""
     
     def can_parse(self, data: Any, url: str) -> bool:
-        """Identifica estrutura MotorLeads"""
-        if not isinstance(data, dict):
+        """Verifica se pode processar dados do Revendai"""
+        # Proteção contra url None ou vazia
+        if not url:
             return False
         
-        # Verifica estrutura MotorLeads: tem "items" com "results"
-        if "items" in data:
-            items = data["items"]
-            if isinstance(items, dict) and "results" in items:
-                return True
-        
-        return False
+        url = url.lower()
+        return "api.motorleads.co" in url
     
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados do MotorLeads"""
