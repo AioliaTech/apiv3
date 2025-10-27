@@ -19,6 +19,8 @@ from fetchers import (
     DSAutoEstoqueParser,
     BndvParser,
     RevendaiParser,
+    ComautoParser1,
+    ComautoParser2,
     WordPressParser
 )
 
@@ -44,6 +46,8 @@ class UnifiedVehicleFetcher:
             DSAutoEstoqueParser(),
             BndvParser(),
             RevendaiParser(),
+            ComautoParser1(),
+            ComautoParser2(),
             WordPressParser()
         ]
         print("[INFO] Sistema unificado iniciado com parsers modularizados")
