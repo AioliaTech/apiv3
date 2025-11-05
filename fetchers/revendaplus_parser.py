@@ -30,7 +30,11 @@ class RevendaPlusParser(BaseParser):
             
             if is_moto:
                 # Para motos, usa a potência como cilindrada
-                cilindrada_final = v.get("potencia")
+                potencia = v.get("potencia")
+                if isinstance(potencia, str):
+                    cilindrada_final = int(potencia) if potencia else None
+                else:
+                    cilindrada_final = potencia
                 categoria_final = v.get("especie", "")
                 tipo_final = "moto"
             else:
