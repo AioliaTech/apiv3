@@ -21,6 +21,7 @@ from fetchers import (
     RevendaiParser,
     ComautoParser1,
     ComautoParser2,
+    RevendaPlusParser,
     WordPressParser
 )
 
@@ -48,6 +49,7 @@ class UnifiedVehicleFetcher:
             RevendaiParser(),
             ComautoParser1(),
             ComautoParser2(),
+            RevendaPlusParser(),
             WordPressParser()
         ]
         print("[INFO] Sistema unificado iniciado com parsers modularizados")
