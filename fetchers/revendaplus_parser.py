@@ -11,7 +11,7 @@ class RevendaPlusParser(BaseParser):
     def can_parse(self, data: Any, url: str) -> bool:
         """Verifica se pode processar dados do RevendaPlus"""
         url = url.lower()
-        return "revendaplus" in url
+        return "revendaplus.com.br" in url
 
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados do RevendaPlus (JSON)"""
@@ -39,14 +39,27 @@ class RevendaPlusParser(BaseParser):
                 tipo_final = v.get("tipo", "")
 
             # Converte km que pode vir com ponto como separador de milhar
-            km_str = v.get("km", "")
-            if isinstance(km_str, str):
-                km_str = km_str.replace(".", "").replace(",", ".")
+            km_value = v.get("km", "")
+            if isinstance(km_value, str):
+                km_value = float(km_value.replace(".", "").replace(",", "."))
+            elif km_value:
+                km_value = float(km_value)
+            else:
+                km_value = None
             
             # Converte preço que vem com vírgula como separador decimal
             preco_str = v.get("valor", "")
             if isinstance(preco_str, str):
                 preco_str = preco_str.replace(".", "").replace(",", ".")
+
+            # Converte ano para inteiro
+            ano_value = v.get("ano_modelo")
+            if isinstance(ano_value, str):
+                ano_value = int(ano_value) if ano_value else None
+            
+            ano_fab_value = v.get("ano_fabricacao")
+            if isinstance(ano_fab_value, str):
+                ano_fab_value = int(ano_fab_value) if ano_fab_value else None
 
             parsed = self.normalize_vehicle({
                 "id": v.get("codigo"),
@@ -54,9 +67,9 @@ class RevendaPlusParser(BaseParser):
                 "versao": v.get("modelo"),
                 "marca": v.get("marca"),
                 "modelo": modelo_veiculo,
-                "ano": v.get("ano_modelo"),
-                "ano_fabricacao": v.get("ano_fabricacao"),
-                "km": km_str,
+                "ano": ano_value,
+                "ano_fabricacao": ano_fab_value,
+                "km": km_value,
                 "cor": v.get("cor"),
                 "combustivel": v.get("combustivel"),
                 "cambio": v.get("cambio"),
