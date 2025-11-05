@@ -17,6 +17,7 @@ from .bndv_parser import BndvParser
 from .revendai_parser import RevendaiParser
 from .comautoparser import ComautoParser1
 from .comautoparser import ComautoParser2
+from .revendaplus_parser import RevendaPlusParser
 
 __all__ = [
     'RevendaiParser',
@@ -35,4 +36,5 @@ __all__ = [
     'ComautoParser1',
     'ComautoParser2',
     'WordPressParser'
+    'RevendaPlusParser'
 ]
