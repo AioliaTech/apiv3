@@ -65,8 +65,12 @@ class RevendaPlusParser(BaseParser):
             if isinstance(ano_fab_value, str):
                 ano_fab_value = int(ano_fab_value) if ano_fab_value else None
 
+            # Remove zeros à esquerda do ID
+            codigo = v.get("codigo", "")
+            id_final = int(codigo) if codigo else None
+
             parsed = self.normalize_vehicle({
-                "id": v.get("codigo"),
+                "id": id_final,
                 "tipo": tipo_final,
                 "versao": v.get("modelo"),
                 "marca": v.get("marca"),
