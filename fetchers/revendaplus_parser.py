@@ -11,7 +11,7 @@ class RevendaPlusParser(BaseParser):
     def can_parse(self, data: Any, url: str) -> bool:
         """Verifica se pode processar dados do RevendaPlus"""
         url = url.lower()
-        return "revendaplus.com.br" in url
+        return "revendaplus" in url
 
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados do RevendaPlus (JSON)"""
