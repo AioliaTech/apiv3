@@ -7,7 +7,7 @@ from typing import Dict, List, Any
 
 class RevendaPlusParser(BaseParser):
     """Parser para dados do RevendaPlus"""
-    
+
     def can_parse(self, data: Any, url: str) -> bool:
         """Verifica se pode processar dados do RevendaPlus"""
         url = url.lower()
@@ -45,7 +45,7 @@ class RevendaPlusParser(BaseParser):
             # Converte km que pode vir com ponto como separador de milhar
             km_value = v.get("km", "")
             if isinstance(km_value, str):
-                km_value = float(km_value.replace(".", "").replace(",", "."))
+                km_value = float(km_value.replace(".", "").replace(",", ".")) if km_value else None
             elif km_value:
                 km_value = float(km_value)
             else:
@@ -53,8 +53,17 @@ class RevendaPlusParser(BaseParser):
             
             # Converte preço que vem com vírgula como separador decimal
             preco_str = v.get("valor", "")
+            
+            # Trata casos especiais como "ZERO" ou strings inválidas
             if isinstance(preco_str, str):
-                preco_str = preco_str.replace(".", "").replace(",", ".")
+                preco_str = preco_str.strip().upper()
+                if preco_str in ["ZERO", "0", "", "N/A", "NAO INFORMADO"]:
+                    preco_final = 0.0
+                else:
+                    preco_str = preco_str.replace(".", "").replace(",", ".")
+                    preco_final = self.converter_preco(preco_str)
+            else:
+                preco_final = self.converter_preco(preco_str)
 
             # Converte ano para inteiro
             ano_value = v.get("ano_modelo")
@@ -85,7 +94,7 @@ class RevendaPlusParser(BaseParser):
                 "portas": None,
                 "categoria": v.get("especie") or categoria_final,
                 "cilindrada": cilindrada_final,
-                "preco": self.converter_preco(preco_str),
+                "preco": preco_final,
                 "opcionais": opcionais_veiculo,
                 "fotos": v.get("fotos", [])
             })
