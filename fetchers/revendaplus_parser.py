@@ -8,6 +8,55 @@ from typing import Dict, List, Any
 class RevendaPlusParser(BaseParser):
     """Parser para dados do RevendaPlus"""
 
+    def _safe_float(self, value: Any, default: float = None) -> float:
+        """Converte valor para float de forma segura"""
+        if value is None or value == "":
+            return default
+        
+        if isinstance(value, (int, float)):
+            return float(value)
+        
+        if isinstance(value, str):
+            value = value.strip().upper()
+            # Trata casos especiais
+            if value in ["ZERO", "0", "N/A", "NAO INFORMADO", "-", ""]:
+                return 0.0
+            
+            try:
+                # Remove pontos e converte vírgula para ponto
+                value = value.replace(".", "").replace(",", ".")
+                return float(value)
+            except (ValueError, AttributeError):
+                return default
+        
+        return default
+
+    def _safe_int(self, value: Any, default: int = None) -> int:
+        """Converte valor para int de forma segura"""
+        if value is None or value == "":
+            return default
+        
+        if isinstance(value, int):
+            return value
+        
+        if isinstance(value, str):
+            value = value.strip().upper()
+            # Trata casos especiais
+            if value in ["ZERO", "0", "N/A", "NAO INFORMADO", "-", ""]:
+                return 0
+            
+            try:
+                # Remove caracteres não numéricos
+                value = ''.join(filter(str.isdigit, value))
+                return int(value) if value else default
+            except (ValueError, AttributeError):
+                return default
+        
+        if isinstance(value, float):
+            return int(value)
+        
+        return default
+
     def can_parse(self, data: Any, url: str) -> bool:
         """Verifica se pode processar dados do RevendaPlus"""
         url = url.lower()
@@ -31,10 +80,7 @@ class RevendaPlusParser(BaseParser):
             if is_moto:
                 # Para motos, usa a potência como cilindrada
                 potencia = v.get("potencia")
-                if isinstance(potencia, str):
-                    cilindrada_final = int(potencia) if potencia else None
-                else:
-                    cilindrada_final = potencia
+                cilindrada_final = self._safe_int(potencia)
                 categoria_final = v.get("especie", "")
                 tipo_final = "moto"
             else:
@@ -42,41 +88,19 @@ class RevendaPlusParser(BaseParser):
                 cilindrada_final = None
                 tipo_final = v.get("tipo", "")
 
-            # Converte km que pode vir com ponto como separador de milhar
-            km_value = v.get("km", "")
-            if isinstance(km_value, str):
-                km_value = float(km_value.replace(".", "").replace(",", ".")) if km_value else None
-            elif km_value:
-                km_value = float(km_value)
-            else:
-                km_value = None
+            # Converte km de forma segura
+            km_value = self._safe_float(v.get("km"))
             
-            # Converte preço que vem com vírgula como separador decimal
-            preco_str = v.get("valor", "")
-            
-            # Trata casos especiais como "ZERO" ou strings inválidas
-            if isinstance(preco_str, str):
-                preco_str = preco_str.strip().upper()
-                if preco_str in ["ZERO", "0", "", "N/A", "NAO INFORMADO"]:
-                    preco_final = 0.0
-                else:
-                    preco_str = preco_str.replace(".", "").replace(",", ".")
-                    preco_final = self.converter_preco(preco_str)
-            else:
-                preco_final = self.converter_preco(preco_str)
+            # Converte preço de forma segura
+            preco_value = self._safe_float(v.get("valor"))
 
-            # Converte ano para inteiro
-            ano_value = v.get("ano_modelo")
-            if isinstance(ano_value, str):
-                ano_value = int(ano_value) if ano_value else None
-            
-            ano_fab_value = v.get("ano_fabricacao")
-            if isinstance(ano_fab_value, str):
-                ano_fab_value = int(ano_fab_value) if ano_fab_value else None
+            # Converte anos de forma segura
+            ano_value = self._safe_int(v.get("ano_modelo"))
+            ano_fab_value = self._safe_int(v.get("ano_fabricacao"))
 
             # Remove zeros à esquerda do ID
             codigo = v.get("codigo", "")
-            id_final = int(codigo) if codigo else None
+            id_final = self._safe_int(codigo)
 
             parsed = self.normalize_vehicle({
                 "id": id_final,
@@ -94,7 +118,7 @@ class RevendaPlusParser(BaseParser):
                 "portas": None,
                 "categoria": v.get("especie") or categoria_final,
                 "cilindrada": cilindrada_final,
-                "preco": preco_final,
+                "preco": preco_value,
                 "opcionais": opcionais_veiculo,
                 "fotos": v.get("fotos", [])
             })
