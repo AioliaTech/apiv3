@@ -22,7 +22,7 @@ from fetchers import (
     ComautoParser1,
     ComautoParser2,
     RevendaPlusParser,
-    CarburgoPlusParser,
+    CarburgoParser,
     WordPressParser
 )
 
