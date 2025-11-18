@@ -87,17 +87,18 @@ class CarburgoParser(BaseParser):
             # Determine tipo and categoria
             tipo_veiculo = tipo.lower()
             is_moto = "moto" in tipo_veiculo or "motocicleta" in tipo_veiculo
-            
+
             if is_moto:
                 cilindrada_final, categoria_final = self.inferir_cilindrada_e_categoria_moto(
                     modelo_veiculo, versao_veiculo
                 )
             else:
-                categoria_final = self.definir_categoria_veiculo(modelo_veiculo, opcionais_veiculo)
+                categoria_final = tipo.strip() if tipo and tipo.strip() else None
                 cilindrada_final = cilindrada
             
+            id_str = "".join(d for i, d in enumerate(placa) if i in [1, 2, 3, 5, 6]) if placa else None
             parsed = self.normalize_vehicle({
-                "id": "".join(d for i, d in enumerate(placa) if i in [1, 2, 3, 5, 6]),
+                "id": id_str,
                 "tipo": "moto" if is_moto else "carro",
                 "titulo": None,
                 "versao": versao_veiculo,
