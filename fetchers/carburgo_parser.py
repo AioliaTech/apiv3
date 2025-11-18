@@ -13,11 +13,17 @@ class CarburgoParser(BaseParser):
         print(f"DEBUG: data type: {type(data)}")
         if isinstance(data, dict):
             print(f"DEBUG: data keys: {list(data.keys())}")
+            if 'estoque' in data:
+                xml_data = data['estoque']
+            else:
+                return False
+        else:
+            xml_data = data
         
-        if not data:
+        if not xml_data:
             return False
         try:
-            root = ET.fromstring(data)
+            root = ET.fromstring(xml_data)
         except (ET.ParseError, TypeError) as e:
             print(f"DEBUG: can_parse error: {e}")
             return False
@@ -27,7 +33,11 @@ class CarburgoParser(BaseParser):
         """Processa dados XML do Carburgo"""
         print(f"DEBUG: Type of data: {type(data)}")
         print(f"DEBUG: Data: {repr(data)}")
-        root = ET.fromstring(data)
+        if isinstance(data, dict) and 'estoque' in data:
+            xml_data = data['estoque']
+        else:
+            xml_data = data
+        root = ET.fromstring(xml_data)
         vehicles: List[Dict] = []
         for carro in root.findall("carro"):
             placa = carro.findtext("placa", default="")
@@ -54,6 +64,9 @@ class CarburgoParser(BaseParser):
             unidade = carro.findtext("unidade", default=None)
 
             fotos: List[str] = []
+            imagem = carro.findtext("imagem", default="")
+            if imagem:
+                fotos.append(imagem.strip())
             fotos_node = carro.find("fotos")
             if fotos_node is not None:
                 for foto in fotos_node.findall("foto"):
