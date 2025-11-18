@@ -51,7 +51,7 @@ class UnifiedVehicleFetcher:
             ComautoParser1(),
             ComautoParser2(),
             RevendaPlusParser(),
-            CarburgoPlusParser(),
+            CarburgoParser(),
             WordPressParser()
         ]
         print("[INFO] Sistema unificado iniciado com parsers modularizados")
