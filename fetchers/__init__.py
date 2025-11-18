@@ -18,7 +18,7 @@ from .revendai_parser import RevendaiParser
 from .comautoparser import ComautoParser1
 from .comautoparser import ComautoParser2
 from .revendaplus_parser import RevendaPlusParser
-from .carburgo_parser import CarburgoPlusParser
+from .carburgo_parser import CarburgoParser
 
 __all__ = [
     'RevendaiParser',
