@@ -26,7 +26,7 @@ class CarburgoParser(BaseParser):
                 if not isinstance(carro, dict):
                     continue
                 placa = carro.get("placa", "")
-                modelo = carro.get("modelo", "").strip()
+                modelo = str(carro.get("modelo") or "").strip()
                 versao = modelo
                 marca = carro.get("marca") or None
                 
@@ -57,7 +57,7 @@ class CarburgoParser(BaseParser):
                 unidade = carro.get("unidade")
 
                 fotos = []
-                imagem = carro.get("imagem", "")
+                imagem = str(carro.get("imagem") or "")
                 if imagem:
                     fotos.append(imagem.strip())
                 fotos_node = carro.get("fotos", {})
@@ -66,11 +66,11 @@ class CarburgoParser(BaseParser):
                     if isinstance(foto_list, list):
                         for foto in foto_list:
                             if foto:
-                                fotos.append(foto.strip())
+                                fotos.append(str(foto).strip())
                     elif isinstance(foto_list, str):
                         fotos.append(foto_list.strip())
 
-                tipo_tag = carro.get("tipo") or ""
+                tipo_tag = str(carro.get("tipo") or "")
                 is_moto = "moto" in tipo_tag.lower()
                 tipo_final = "moto" if is_moto else "carro"
                 categoria = tipo_tag if is_moto else None
@@ -107,7 +107,7 @@ class CarburgoParser(BaseParser):
             vehicles = []
             for carro in root.findall("carro"):
                 placa = carro.findtext("placa", default="")
-                modelo = carro.findtext("modelo", default="").strip()
+                modelo = (carro.findtext("modelo") or "").strip()
                 versao = modelo
                 marca = carro.findtext("marca", default=None)
                 
