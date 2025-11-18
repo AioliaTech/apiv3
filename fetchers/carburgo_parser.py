@@ -13,8 +13,6 @@ class CarburgoParser(BaseParser):
 
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados XML do Carburgo"""
-        print(f"DEBUG: Type of data: {type(data)}")
-        print(f"DEBUG: Data: {repr(data)}")
         if isinstance(data, dict) and 'estoque' in data:
             xml_data = data['estoque']
         else:
