@@ -9,25 +9,7 @@ class CarburgoParser(BaseParser):
 
     def can_parse(self, data: Any, url: str) -> bool:
         """Verifica se pode processar dados XML do Carburgo"""
-        print(f"DEBUG: can_parse called for {url}")
-        print(f"DEBUG: data type: {type(data)}")
-        if isinstance(data, dict):
-            print(f"DEBUG: data keys: {list(data.keys())}")
-            if 'estoque' in data:
-                xml_data = data['estoque']
-            else:
-                return False
-        else:
-            xml_data = data
-        
-        if not xml_data:
-            return False
-        try:
-            root = ET.fromstring(xml_data)
-        except (ET.ParseError, TypeError) as e:
-            print(f"DEBUG: can_parse error: {e}")
-            return False
-        return root.tag == "estoque"
+        return "citroenpremiere.com.br" in url.lower()
 
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados XML do Carburgo"""
