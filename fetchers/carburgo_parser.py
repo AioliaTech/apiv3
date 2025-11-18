@@ -9,7 +9,9 @@ class CarburgoParser(BaseParser):
 
     def can_parse(self, data: Any, url: str) -> bool:
         """Verifica se pode processar dados XML do Carburgo"""
-        return url and "citroenpremiere.com.br" in url.lower()
+        if not url:
+            return False
+        return "citroenpremiere.com.br" in url.lower()
 
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados XML do Carburgo"""
@@ -60,7 +62,7 @@ class CarburgoParser(BaseParser):
                     elif isinstance(foto_list, str):
                         fotos.append(foto_list.strip())
 
-                tipo_tag = carro.get("tipo", "")
+                tipo_tag = carro.get("tipo") or ""
                 is_moto = "moto" in tipo_tag.lower()
                 tipo_final = "moto" if is_moto else "carro"
                 categoria = tipo_tag if is_moto else None
@@ -129,7 +131,7 @@ class CarburgoParser(BaseParser):
                         if foto.text:
                             fotos.append(foto.text.strip())
 
-                tipo_tag = carro.findtext("tipo", default="")
+                tipo_tag = carro.findtext("tipo", default="") or ""
                 is_moto = "moto" in tipo_tag.lower()
                 tipo_final = "moto" if is_moto else "carro"
                 categoria = tipo_tag if not is_moto else None
