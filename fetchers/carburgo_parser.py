@@ -19,6 +19,8 @@ class CarburgoParser(BaseParser):
 
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados XML do Carburgo"""
+        print(f"DEBUG: Type of data: {type(data)}")
+        print(f"DEBUG: Data: {repr(data)}")
         root = ET.fromstring(data)
         vehicles: List[Dict] = []
         for carro in root.findall("carro"):
