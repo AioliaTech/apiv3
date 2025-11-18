@@ -17,15 +17,23 @@ class CarburgoParser(BaseParser):
         """Processa dados XML do Carburgo"""
         if isinstance(data, dict):
             # Assume data is parsed XML dict
-            estoque = data.get('estoque', {})
-            carros = estoque.get('carro', [])
+            estoque = data.get('estoque')
+            if not estoque:
+                return []
+            
+            carros = estoque.get('carro')
+            if not carros:
+                return []
+                
             if not isinstance(carros, list):
-                carros = [carros] if carros else []
+                carros = [carros]
+                
             vehicles = []
             for carro in carros:
                 if not isinstance(carro, dict):
                     continue
-                placa = carro.get("placa", "")
+                
+                placa = str(carro.get("placa") or "")
                 modelo = str(carro.get("modelo") or "").strip()
                 versao = modelo
                 marca = carro.get("marca") or None
@@ -60,7 +68,8 @@ class CarburgoParser(BaseParser):
                 imagem = str(carro.get("imagem") or "")
                 if imagem:
                     fotos.append(imagem.strip())
-                fotos_node = carro.get("fotos", {})
+                    
+                fotos_node = carro.get("fotos")
                 if isinstance(fotos_node, dict) and "foto" in fotos_node:
                     foto_list = fotos_node["foto"]
                     if isinstance(foto_list, list):
@@ -69,6 +78,8 @@ class CarburgoParser(BaseParser):
                                 fotos.append(str(foto).strip())
                     elif isinstance(foto_list, str):
                         fotos.append(foto_list.strip())
+                    elif foto_list:
+                        fotos.append(str(foto_list).strip())
 
                 tipo_tag = str(carro.get("tipo") or "")
                 is_moto = "moto" in tipo_tag.lower()
@@ -103,13 +114,19 @@ class CarburgoParser(BaseParser):
             return vehicles
         else:
             # Original XML parsing
-            root = ET.fromstring(data)
+            if not data:
+                return []
+            try:
+                root = ET.fromstring(data)
+            except (ET.ParseError, TypeError):
+                return []
+                
             vehicles = []
             for carro in root.findall("carro"):
-                placa = carro.findtext("placa", default="")
+                placa = carro.findtext("placa") or ""
                 modelo = (carro.findtext("modelo") or "").strip()
                 versao = modelo
-                marca = carro.findtext("marca", default=None)
+                marca = carro.findtext("marca") or None
                 
                 km_text = carro.findtext("km") or ""
                 km = int(km_text) if km_text.isdigit() else None
@@ -123,8 +140,8 @@ class CarburgoParser(BaseParser):
                 portas_text = carro.findtext("portas") or ""
                 portas = int(portas_text) if portas_text.isdigit() else None
                 
-                combustivel = carro.findtext("combustivel", default=None)
-                cambio = carro.findtext("cambio", default=None)
+                combustivel = carro.findtext("combustivel")
+                cambio = carro.findtext("cambio")
                 
                 cilindradas_text = carro.findtext("cilindradas") or ""
                 cilindrada = int(cilindradas_text) if cilindradas_text.isdigit() else None
@@ -132,13 +149,13 @@ class CarburgoParser(BaseParser):
                 preco_text = carro.findtext("preco") or ""
                 preco = self.converter_preco(preco_text)
                 
-                cor = carro.findtext("cor", default=None)
-                descricao = carro.findtext("descricao", default=None)
-                url_item = carro.findtext("url", default=None)
-                unidade = carro.findtext("unidade", default=None)
+                cor = carro.findtext("cor")
+                descricao = carro.findtext("descricao")
+                url_item = carro.findtext("url")
+                unidade = carro.findtext("unidade")
 
                 fotos = []
-                imagem = carro.findtext("imagem", default="")
+                imagem = carro.findtext("imagem") or ""
                 if imagem:
                     fotos.append(imagem.strip())
                 fotos_node = carro.find("fotos")
@@ -147,7 +164,7 @@ class CarburgoParser(BaseParser):
                         if foto.text:
                             fotos.append(foto.text.strip())
 
-                tipo_tag = carro.findtext("tipo", default="") or ""
+                tipo_tag = carro.findtext("tipo") or ""
                 is_moto = "moto" in tipo_tag.lower()
                 tipo_final = "moto" if is_moto else "carro"
                 categoria = tipo_tag if not is_moto else None
