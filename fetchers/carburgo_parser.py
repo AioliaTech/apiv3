@@ -29,20 +29,28 @@ class CarburgoParser(BaseParser):
                 modelo = carro.get("modelo", "").strip()
                 versao = modelo
                 marca = carro.get("marca") or None
-                km_text = carro.get("km", "")
+                
+                km_text = str(carro.get("km") or "")
                 km = int(km_text) if km_text.isdigit() else None
-                ano_text = carro.get("ano_modelo") or carro.get("ano")
-                ano = int(ano_text) if ano_text and ano_text.isdigit() else None
-                ano_fab_text = carro.get("ano_fabricacao")
-                ano_fab = int(ano_fab_text) if ano_fab_text and ano_fab_text.isdigit() else None
-                portas_text = carro.get("portas", "")
+                
+                ano_text = str(carro.get("ano_modelo") or carro.get("ano") or "")
+                ano = int(ano_text) if ano_text.isdigit() else None
+                
+                ano_fab_text = str(carro.get("ano_fabricacao") or "")
+                ano_fab = int(ano_fab_text) if ano_fab_text.isdigit() else None
+                
+                portas_text = str(carro.get("portas") or "")
                 portas = int(portas_text) if portas_text.isdigit() else None
+                
                 combustivel = carro.get("combustivel")
                 cambio = carro.get("cambio")
-                cilindradas_text = carro.get("cilindradas", "")
+                
+                cilindradas_text = str(carro.get("cilindradas") or "")
                 cilindrada = int(cilindradas_text) if cilindradas_text.isdigit() else None
-                preco_text = carro.get("preco", "")
+                
+                preco_text = str(carro.get("preco") or "")
                 preco = self.converter_preco(preco_text)
+                
                 cor = carro.get("cor")
                 descricao = carro.get("descricao")
                 url_item = carro.get("url")
@@ -102,20 +110,28 @@ class CarburgoParser(BaseParser):
                 modelo = carro.findtext("modelo", default="").strip()
                 versao = modelo
                 marca = carro.findtext("marca", default=None)
-                km_text = carro.findtext("km", default="")
+                
+                km_text = carro.findtext("km") or ""
                 km = int(km_text) if km_text.isdigit() else None
-                ano_text = carro.findtext("ano_modelo") or carro.findtext("ano")
-                ano = int(ano_text) if ano_text and ano_text.isdigit() else None
-                ano_fab_text = carro.findtext("ano_fabricacao", default=None)
-                ano_fab = int(ano_fab_text) if ano_fab_text and ano_fab_text.isdigit() else None
-                portas_text = carro.findtext("portas", default="")
+                
+                ano_text = carro.findtext("ano_modelo") or carro.findtext("ano") or ""
+                ano = int(ano_text) if ano_text.isdigit() else None
+                
+                ano_fab_text = carro.findtext("ano_fabricacao") or ""
+                ano_fab = int(ano_fab_text) if ano_fab_text.isdigit() else None
+                
+                portas_text = carro.findtext("portas") or ""
                 portas = int(portas_text) if portas_text.isdigit() else None
+                
                 combustivel = carro.findtext("combustivel", default=None)
                 cambio = carro.findtext("cambio", default=None)
-                cilindradas_text = carro.findtext("cilindradas", default="")
+                
+                cilindradas_text = carro.findtext("cilindradas") or ""
                 cilindrada = int(cilindradas_text) if cilindradas_text.isdigit() else None
-                preco_text = carro.findtext("preco", default="")
+                
+                preco_text = carro.findtext("preco") or ""
                 preco = self.converter_preco(preco_text)
+                
                 cor = carro.findtext("cor", default=None)
                 descricao = carro.findtext("descricao", default=None)
                 url_item = carro.findtext("url", default=None)
