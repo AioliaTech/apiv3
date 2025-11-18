@@ -17,75 +17,22 @@ class CarburgoParser(BaseParser):
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados do Carburgo"""
         if isinstance(data, str):
-            try:
-                root = ET.fromstring(data)
-                carros = root.findall('carro')
-            except (ET.ParseError, TypeError):
+            data = self._xml_to_dict(data)
+            if not data:
                 return []
-        else:
-            # Assume data is dict (parsed XML)
-            estoque = data.get('estoque')
-            if not estoque:
-                return []
-            carros = estoque.get('carro')
-            if not carros:
-                return []
-            if isinstance(carros, dict):
-                carros = [carros]
-        
+
+        veiculos = data["estoque"]["veiculo"]
+        if isinstance(veiculos, dict):
+            veiculos = [veiculos]
+
         parsed_vehicles = []
-        for carro in carros:
-            if isinstance(data, str):
-                modelo_veiculo = (carro.findtext('modelo') or '').strip()
-                versao_veiculo = modelo_veiculo  # No versao field, use modelo
-                marca = carro.findtext('marca') or None
-                ano_modelo = carro.findtext('ano_modelo')
-                ano_fabricacao = carro.findtext('ano')
-                km = carro.findtext('km')
-                portas = carro.findtext('portas')
-                combustivel = carro.findtext('combustivel')
-                cambio = carro.findtext('cambio')
-                cilindradas = carro.findtext('cilindradas')
-                preco = carro.findtext('preco')
-                cor = None  # No cor field
-                opcionais_veiculo = None  # No opcionais
-                fotos = self._extract_photos(carro)
-                tipo = carro.findtext('tipo', '')
-                placa = carro.findtext('placa', '')
-                url_item = carro.findtext('url')
-                unidade = carro.findtext('unidade')
-                descricao = carro.findtext('descricao')
-            else:
-                modelo_veiculo = carro.get('modelo', '').strip()
-                versao_veiculo = modelo_veiculo
-                marca = carro.get('marca')
-                ano_modelo = carro.get('ano_modelo')
-                ano_fabricacao = carro.get('ano')
-                km = carro.get('km')
-                portas = carro.get('portas')
-                combustivel = carro.get('combustivel')
-                cambio = carro.get('cambio')
-                cilindradas = carro.get('cilindradas')
-                preco = carro.get('preco')
-                cor = carro.get('cor')
-                opcionais_veiculo = self._parse_opcionais(carro.get('opcionais'))
-                fotos = self._extract_photos(carro)
-                tipo = carro.get('tipo', '')
-                placa = carro.get('placa', '')
-                url_item = carro.get('url')
-                unidade = carro.get('unidade')
-                descricao = carro.get('descricao')
-            
-            # Convert to appropriate types
-            ano = int(ano_modelo) if ano_modelo and ano_modelo.isdigit() else None
-            ano_fab = int(ano_fabricacao) if ano_fabricacao and ano_fabricacao.isdigit() else None
-            km_int = int(km) if km and km.isdigit() else None
-            portas_int = int(portas) if portas and portas.isdigit() else None
-            cilindrada = int(cilindradas) if cilindradas and cilindradas.isdigit() else None
-            preco_float = self.converter_preco(preco) if preco else None
-            
-            # Determine tipo and categoria
-            tipo_veiculo = tipo.lower()
+        for v in veiculos:
+            modelo_veiculo = v.get("modelo")
+            versao_veiculo = v.get("modelo")  # Use modelo as versao
+            opcionais_veiculo = None  # No opcionais
+
+            # Determina se é moto ou carro
+            tipo_veiculo = v.get("tipo", "").lower()
             is_moto = "moto" in tipo_veiculo or "motocicleta" in tipo_veiculo
 
             if is_moto:
@@ -93,37 +40,60 @@ class CarburgoParser(BaseParser):
                     modelo_veiculo, versao_veiculo
                 )
             else:
-                categoria_final = tipo.strip() if tipo and tipo.strip() else None
-                cilindrada_final = cilindrada
-            
+                categoria_final = v.get("tipo") if v.get("tipo") else None
+                cilindrada_final = v.get("cilindradas")
+
+            placa = v.get("placa", "")
             id_str = "".join(d for i, d in enumerate(placa) if i in [1, 2, 3, 5, 6]) if placa else None
+
             parsed = self.normalize_vehicle({
                 "id": id_str,
                 "tipo": "moto" if is_moto else "carro",
                 "titulo": None,
                 "versao": versao_veiculo,
-                "marca": marca,
+                "marca": v.get("marca"),
                 "modelo": modelo_veiculo,
-                "ano": ano,
-                "ano_fabricacao": ano_fab,
-                "km": km_int,
-                "cor": cor,
-                "combustivel": combustivel,
-                "cambio": cambio,
+                "ano": v.get("ano_modelo"),
+                "ano_fabricacao": v.get("ano"),
+                "km": v.get("km"),
+                "cor": None,
+                "combustivel": v.get("combustivel"),
+                "cambio": v.get("cambio"),
                 "motor": self._extract_motor_from_version(versao_veiculo),
-                "portas": portas_int,
+                "portas": v.get("portas"),
                 "categoria": categoria_final,
                 "cilindrada": cilindrada_final,
-                "preco": preco_float,
+                "preco": self.converter_preco(v.get("preco")),
                 "opcionais": opcionais_veiculo,
-                "fotos": fotos,
-                "url": url_item,
-                "unidade": unidade,
-                "descricao": descricao
+                "fotos": self._extract_photos(v),
+                "url": v.get("url"),
+                "unidade": v.get("unidade"),
+                "descricao": v.get("descricao")
             })
             parsed_vehicles.append(parsed)
-        
+
         return parsed_vehicles
+
+    def _xml_to_dict(self, xml_str: str) -> Dict:
+        """Converte XML para dict similar ao Autocerto"""
+        try:
+            root = ET.fromstring(xml_str)
+            carros = []
+            for carro in root.findall('carro'):
+                carro_dict = {}
+                for child in carro:
+                    if child.tag == 'fotos':
+                        fotos = []
+                        for foto in child.findall('foto'):
+                            if foto.text:
+                                fotos.append(foto.text)
+                        carro_dict['fotos'] = {'foto': fotos}
+                    else:
+                        carro_dict[child.tag] = child.text
+                carros.append(carro_dict)
+            return {"estoque": {"veiculo": carros}}
+        except:
+            return {}
     
     def _parse_opcionais(self, opcionais: Any) -> str:
         """Processa os opcionais do Carburgo"""
@@ -158,30 +128,18 @@ class CarburgoParser(BaseParser):
         words = versao.strip().split()
         return words[0] if words else None
     
-    def _extract_photos(self, carro) -> List[str]:
+    def _extract_photos(self, v: Dict) -> List[str]:
         """Extrai fotos do veículo Carburgo"""
-        fotos = []
-        if hasattr(carro, 'findtext'):  # ET element
-            imagem = carro.findtext('imagem')
-            if imagem:
-                fotos.append(imagem)
-            fotos_node = carro.find('fotos')
-            if fotos_node is not None:
-                for foto in fotos_node.findall('foto'):
-                    if foto.text:
-                        fotos.append(foto.text)
-        else:  # dict
-            imagem = carro.get('imagem')
-            if imagem:
-                fotos.append(imagem)
-            fotos_node = carro.get('fotos')
-            if isinstance(fotos_node, dict) and 'foto' in fotos_node:
-                foto_list = fotos_node['foto']
-                if isinstance(foto_list, list):
-                    fotos.extend(foto_list)
-                elif foto_list:
-                    fotos.append(str(foto_list))
-        return fotos
+        fotos = v.get("fotos")
+        if not fotos or not (fotos_foto := fotos.get("foto")):
+            return []
+
+        if isinstance(fotos_foto, dict):
+            fotos_foto = [fotos_foto]
+
+        return [
+            img for img in fotos_foto if img
+        ]
     
     def definir_categoria_veiculo(self, modelo: str, opcionais: str) -> str:
         """Define categoria do veículo baseado no modelo e opcionais"""
