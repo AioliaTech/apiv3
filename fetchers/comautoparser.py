@@ -89,7 +89,7 @@ class ComautoParser1(BaseParser):
                 "cilindrada": cilindrada_final,
                 "preco": preco_final,
                 "opcionais": v.get("acessorios") or opcionais_veiculo,
-                "localizacao": "localizacao",
+                "localizacao": localizacao,
                 "fotos": v.get("fotos", [])
             })
             parsed_vehicles.append(parsed)
