@@ -14,10 +14,21 @@ class ComautoParser1(BaseParser):
         url = url.lower()
         return "s3.agsistema.net" in url
     
+    def _get_localizacao(self, url: str) -> str:
+        """Determina a localização baseado na URL"""
+        if not url:
+            return ""
+        
+        # Para AGSistema sempre é Montenegro
+        return "montenegro"
+    
     def parse(self, data: Any, url: str) -> List[Dict]:
         veiculos = data.get("veiculos", [])
         if isinstance(veiculos, dict): 
             veiculos = [veiculos]
+        
+        # Define a localização baseada na URL
+        localizacao = self._get_localizacao(url)
         
         parsed_vehicles = []
         for v in veiculos:
@@ -77,7 +88,8 @@ class ComautoParser1(BaseParser):
                 "categoria": v.get("carroceria") or categoria_final,
                 "cilindrada": cilindrada_final,
                 "preco": preco_final,
-                "opcionais": v.get("acessorios") or opcionais_veiculo, 
+                "opcionais": v.get("acessorios") or opcionais_veiculo,
+                "localizacao": localizacao,
                 "fotos": v.get("fotos", [])
             })
             parsed_vehicles.append(parsed)
@@ -102,6 +114,21 @@ class ComautoParser2(BaseParser):
         url = url.lower()
         return "api.motorleads.co" in url
     
+    def _get_localizacao(self, url: str) -> str:
+        """Determina a localização baseado na URL"""
+        if not url:
+            return ""
+        
+        url_lower = url.lower()
+        
+        # Verifica qual hash da API está presente na URL
+        if "hgav797f70slkfqdgbdhiglh" in url_lower:
+            return "santa luzia"
+        elif "7x0keld0hifx9ebkiarvz1oa" in url_lower:
+            return "motomecânica"
+        
+        return ""
+    
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados do MotorLeads"""
         items = data.get("items", {})
@@ -109,6 +136,9 @@ class ComautoParser2(BaseParser):
         
         if isinstance(results, dict):
             results = [results]
+        
+        # Define a localização baseada na URL
+        localizacao = self._get_localizacao(url)
         
         parsed_vehicles = []
         
@@ -182,6 +212,7 @@ class ComautoParser2(BaseParser):
                 "cilindrada": cilindrada_final,
                 "preco": self.converter_preco(v.get("price")),
                 "opcionais": opcionais_processados,
+                "localizacao": localizacao,
                 "fotos": fotos_list
             })
             
