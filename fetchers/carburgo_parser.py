@@ -28,11 +28,14 @@ class CarburgoParser(BaseParser):
             print(f"[ERRO] Estrutura 'estoque' não encontrada. Keys disponíveis: {list(data.keys())}")
             return []
         
-        if "veiculo" not in data["estoque"]:
-            print(f"[ERRO] Estrutura 'veiculo' não encontrada. Keys disponíveis: {list(data['estoque'].keys())}")
+        # Aceita tanto 'veiculo' quanto 'carro' como chave
+        if "veiculo" not in data["estoque"] and "carro" not in data["estoque"]:
+            print(f"[ERRO] Estrutura 'veiculo' ou 'carro' não encontrada. Keys disponíveis: {list(data['estoque'].keys())}")
             return []
 
-        veiculos = data["estoque"]["veiculo"]
+        # Busca por 'veiculo' primeiro, depois por 'carro'
+        veiculos = data["estoque"].get("veiculo") or data["estoque"].get("carro")
+        
         if isinstance(veiculos, dict):
             veiculos = [veiculos]
 
