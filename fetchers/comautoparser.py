@@ -212,7 +212,7 @@ class ComautoParser2(BaseParser):
                 "cilindrada": cilindrada_final,
                 "preco": self.converter_preco(v.get("price")),
                 "opcionais": opcionais_processados,
-                "localizacao": localizacao,
+                "localizacao": "localizacao",
                 "fotos": fotos_list
             })
             
