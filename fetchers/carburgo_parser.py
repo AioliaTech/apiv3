@@ -45,7 +45,7 @@ class CarburgoParser(BaseParser):
             versao_veiculo = (v.get("modelo") or "").strip()  # Use modelo as versao
             opcionais_veiculo = None  # No opcionais
 
-            # Determina se é moto ou carro - CORREÇÃO AQUI
+            # Determina se é moto ou carro
             tipo_veiculo = (v.get("tipo") or "").lower()
             is_moto = "moto" in tipo_veiculo or "motocicleta" in tipo_veiculo
 
@@ -54,7 +54,8 @@ class CarburgoParser(BaseParser):
                     modelo_veiculo, versao_veiculo
                 )
             else:
-                categoria_final = v.get("tipo") if v.get("tipo") else None
+                # Usa o tipo do XML se existir, senão infere pela categoria
+                categoria_final = v.get("tipo") or self.definir_categoria_veiculo(modelo_veiculo, opcionais_veiculo or "")
                 cilindrada_final = v.get("cilindradas")
 
             placa = v.get("placa", "")
