@@ -50,7 +50,8 @@ class BaseParser(ABC):
             "categoria": vehicle.get("categoria"),
             "cilindrada": vehicle.get("cilindrada"), 
             "preco": vehicle.get("preco", 0.0),
-            "opcionais": vehicle.get("opcionais", ""), 
+            "opcionais": vehicle.get("opcionais", ""),
+            "localizacao": vehicle.get("localizacao"),
             "fotos": vehicle.get("fotos", [])
         }
     
