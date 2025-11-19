@@ -82,7 +82,7 @@ class CarburgoParser(BaseParser):
                 "opcionais": opcionais_veiculo,
                 "fotos": self._extract_photos(v),
                 "url": v.get("url"),
-                "unidade": v.get("unidade"),
+                "localizacao": v.get("unidade"),
                 "descricao": v.get("descricao")
             })
             parsed_vehicles.append(parsed)
