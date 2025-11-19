@@ -1,6 +1,14 @@
 from .base_parser import BaseParser
 from typing import Dict, List, Any, Optional
 import re
+import os
+
+# Mapeamento de URLs para localizações baseado nas variáveis de ambiente
+URL_LOCALIZACAO_MAP = {
+    os.getenv("XML_URL_1", ""): "montenegro",
+    os.getenv("XML_URL_2", ""): "santa luzia",
+    os.getenv("XML_URL_3", ""): "motomecânica"
+}
 
 class ComautoParser1(BaseParser):
     """Parser para dados do AGSistema"""
@@ -19,8 +27,14 @@ class ComautoParser1(BaseParser):
         if not url:
             return ""
         
-        # Para AGSistema sempre é Montenegro
-        return "montenegro"
+        # Busca exata no mapeamento
+        localizacao = URL_LOCALIZACAO_MAP.get(url, "")
+        
+        # Se não encontrou no mapeamento exato, verifica se é AGSistema (fallback)
+        if not localizacao and "s3.agsistema.net" in url.lower():
+            return "montenegro"
+        
+        return localizacao
     
     def parse(self, data: Any, url: str) -> List[Dict]:
         veiculos = data.get("veiculos", [])
@@ -119,15 +133,8 @@ class ComautoParser2(BaseParser):
         if not url:
             return ""
         
-        url_lower = url.lower()
-        
-        # Verifica qual hash da API está presente na URL
-        if "hgav797f70slkfqdgbdhiglh" in url_lower:
-            return "santa luzia"
-        elif "7x0keld0hifx9ebkiarvz1oa" in url_lower:
-            return "motomecânica"
-        
-        return ""
+        # Busca exata no mapeamento
+        return URL_LOCALIZACAO_MAP.get(url, "")
     
     def parse(self, data: Any, url: str) -> List[Dict]:
         """Processa dados do MotorLeads"""
@@ -212,7 +219,7 @@ class ComautoParser2(BaseParser):
                 "cilindrada": cilindrada_final,
                 "preco": self.converter_preco(v.get("price")),
                 "opcionais": opcionais_processados,
-                "localizacao": "localizacao",
+                "localizacao": localizacao,
                 "fotos": fotos_list
             })
             
