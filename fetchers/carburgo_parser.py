@@ -54,7 +54,7 @@ class CarburgoParser(BaseParser):
                     modelo_veiculo, versao_veiculo
                 )
             else:
-                # Usa o tipo do XML se existir, senão infere pela categoria
+                # Usa o tipo do XML se existir, senão infere pela categoria usando BaseParser
                 categoria_final = v.get("tipo") or self.definir_categoria_veiculo(modelo_veiculo, opcionais_veiculo or "")
                 cilindrada_final = v.get("cilindradas")
 
@@ -167,10 +167,7 @@ class CarburgoParser(BaseParser):
 
         return [img for img in fotos_foto if img]
     
-    def definir_categoria_veiculo(self, modelo: str, opcionais: str) -> str:
-        """Define categoria do veículo baseado no modelo e opcionais"""
-        # Para Carburgo, usar o tipo como categoria
-        return None  # Será definido pelo campo tipo
+    # REMOVIDO: definir_categoria_veiculo - agora usa o do BaseParser
     
     def inferir_cilindrada_e_categoria_moto(self, modelo: str, versao: str):
         """Inferir cilindrada e categoria para motos (não aplicável para Carburgo)"""
