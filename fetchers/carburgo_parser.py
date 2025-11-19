@@ -41,12 +41,12 @@ class CarburgoParser(BaseParser):
 
         parsed_vehicles = []
         for v in veiculos:
-            modelo_veiculo = v.get("modelo", "").strip()
-            versao_veiculo = v.get("modelo", "").strip()  # Use modelo as versao
+            modelo_veiculo = (v.get("modelo") or "").strip()
+            versao_veiculo = (v.get("modelo") or "").strip()  # Use modelo as versao
             opcionais_veiculo = None  # No opcionais
 
-            # Determina se é moto ou carro
-            tipo_veiculo = v.get("tipo", "").lower()
+            # Determina se é moto ou carro - CORREÇÃO AQUI
+            tipo_veiculo = (v.get("tipo") or "").lower()
             is_moto = "moto" in tipo_veiculo or "motocicleta" in tipo_veiculo
 
             if is_moto:
@@ -64,9 +64,9 @@ class CarburgoParser(BaseParser):
                 "id": id_str,
                 "tipo": "moto" if is_moto else "carro",
                 "titulo": None,
-                "versao": versao_veiculo,
-                "marca": v.get("marca"),
-                "modelo": modelo_veiculo,
+                "versao": versao_veiculo or None,
+                "marca": v.get("marca") or None,
+                "modelo": modelo_veiculo or None,
                 "ano": v.get("ano_modelo"),
                 "ano_fabricacao": v.get("ano"),
                 "km": v.get("km"),
