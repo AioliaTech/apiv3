@@ -23,14 +23,23 @@ class CarburgoParser(BaseParser):
             if not data:
                 return []
 
+        # Validação da estrutura
+        if "estoque" not in data:
+            print(f"[ERRO] Estrutura 'estoque' não encontrada. Keys disponíveis: {list(data.keys())}")
+            return []
+        
+        if "veiculo" not in data["estoque"]:
+            print(f"[ERRO] Estrutura 'veiculo' não encontrada. Keys disponíveis: {list(data['estoque'].keys())}")
+            return []
+
         veiculos = data["estoque"]["veiculo"]
         if isinstance(veiculos, dict):
             veiculos = [veiculos]
 
         parsed_vehicles = []
         for v in veiculos:
-            modelo_veiculo = v.get("modelo")
-            versao_veiculo = v.get("modelo")  # Use modelo as versao
+            modelo_veiculo = v.get("modelo", "").strip()
+            versao_veiculo = v.get("modelo", "").strip()  # Use modelo as versao
             opcionais_veiculo = None  # No opcionais
 
             # Determina se é moto ou carro
@@ -81,6 +90,7 @@ class CarburgoParser(BaseParser):
         try:
             root = ET.fromstring(xml_str)
             carros = []
+            
             for carro in root.findall('carro'):
                 carro_dict = {}
                 for child in carro:
@@ -93,8 +103,16 @@ class CarburgoParser(BaseParser):
                     else:
                         carro_dict[child.tag] = child.text
                 carros.append(carro_dict)
+            
+            if not carros:
+                print(f"[AVISO] Nenhum elemento <carro> encontrado no XML")
+                return {}
+            
             return {"estoque": {"veiculo": carros}}
-        except:
+        except Exception as e:
+            print(f"[ERRO] Falha ao parsear XML do Carburgo: {e}")
+            import traceback
+            traceback.print_exc()
             return {}
     
     def _parse_opcionais(self, opcionais: Any) -> str:
@@ -133,15 +151,17 @@ class CarburgoParser(BaseParser):
     def _extract_photos(self, v: Dict) -> List[str]:
         """Extrai fotos do veículo Carburgo"""
         fotos = v.get("fotos")
-        if not fotos or not (fotos_foto := fotos.get("foto")):
+        if not fotos:
+            return []
+        
+        fotos_foto = fotos.get("foto")
+        if not fotos_foto:
             return []
 
         if isinstance(fotos_foto, dict):
             fotos_foto = [fotos_foto]
 
-        return [
-            img for img in fotos_foto if img
-        ]
+        return [img for img in fotos_foto if img]
     
     def definir_categoria_veiculo(self, modelo: str, opcionais: str) -> str:
         """Define categoria do veículo baseado no modelo e opcionais"""
